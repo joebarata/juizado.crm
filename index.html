@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LexFlow 360 - CRM Jurídico de Elite</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
+    <style>
+      :root {
+        --bg-main: #f8fafc;
+        --glass-card-bg: rgba(255, 255, 255, 0.45);
+        --glass-border: rgba(255, 255, 255, 0.8);
+        --text-primary: #0f172a;
+        --text-secondary: #475569;
+        --accent: #2563eb;
+      }
+
+      .dark {
+        --bg-main: #020617;
+        --glass-card-bg: rgba(15, 23, 42, 0.6);
+        --glass-border: rgba(255, 255, 255, 0.08);
+        --text-primary: #ffffff;
+        --text-secondary: #94a3b8;
+        --accent: #3b82f6;
+      }
+
+      body {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        background-color: var(--bg-main);
+        color: var(--text-primary);
+        transition: background-color 0.4s ease;
+        -webkit-font-smoothing: antialiased;
+        overflow-x: hidden;
+        margin: 0;
+      }
+
+      .soft-glass {
+        background: var(--glass-card-bg);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid var(--glass-border);
+        box-shadow: 0 10px 40px -12px rgba(0, 0, 0, 0.1);
+        border-radius: 24px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .sidebar-item-active {
+        background: rgba(37, 99, 235, 0.1) !important;
+        border-right: 4px solid var(--accent) !important;
+        color: var(--accent) !important;
+      }
+
+      .dynamic-btn {
+        background: var(--accent);
+        color: white !important;
+        font-weight: 800;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.3);
+      }
+      
+      .dynamic-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+      }
+
+      .fc { --fc-border-color: var(--glass-border); }
+      .fc-toolbar-title { font-weight: 800 !important; font-size: 1.1rem !important; color: var(--text-primary) !important; }
+      
+      ::-webkit-scrollbar { width: 6px; }
+      ::-webkit-scrollbar-thumb { background: rgba(155, 155, 155, 0.2); border-radius: 20px; }
+
+      .animate-fade-up { animation: fadeUp 0.6s ease-out forwards; }
+      @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      
+      input, select, textarea {
+        background: transparent;
+        color: var(--text-primary);
+      }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.38.0",
+    "recharts": "https://esm.sh/recharts@^3.6.0"
+  }
+}
+</script>
+</head>
+<body>
+    <div id="root"></div>
+</body>
+</html>
