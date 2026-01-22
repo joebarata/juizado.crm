@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { LandingPage } from './components/LandingPage.tsx';
 import { Login } from './components/Login.tsx';
@@ -16,6 +15,7 @@ import { LegalLibrary } from './components/LegalLibrary.tsx';
 import { MembersArea } from './components/MembersArea.tsx';
 
 const App: React.FC = () => {
+  // Estado inicial fixado em 'landing'
   const [currentView, setCurrentView] = useState<'landing' | 'login' | 'members' | 'crm'>('landing');
   const [activeTab, setActiveTab] = useState<'dashboard' | 'clients' | 'agenda' | 'lawyers' | 'financial' | 'ai' | 'kanban' | 'planning' | 'documents' | 'intelligence' | 'library'>('dashboard');
   const [user, setUser] = useState<any>(null);
@@ -25,9 +25,7 @@ const App: React.FC = () => {
   }, []);
 
   const [lawyers] = useState([{ id: '1', name: 'Dr. Ricardo Silva', oab: '123.456/SP' }, { id: '2', name: 'Dra. Beatriz Mendes', oab: '654.321/SP' }]);
-  
-  // Fix: Explicitly type states as any[] to solve type mismatches with internal component interfaces
-  const [clients, setClients] = useState<any[]>([{ id: '1', name: 'João Silva Oliveira', type: 'PF', doc: '123.456.789-00', email: 'joao@email.com', city: 'São Paulo', cases: 3, history: [] as any[] }]);
+  const [clients, setClients] = useState<any[]>([{ id: '1', name: 'João Silva Oliveira', type: 'PF', doc: '123.456.789-00', email: 'joao@email.com', city: 'São Paulo', cases: 3, history: [] }]);
   const [events, setEvents] = useState<any[]>([{ id: '1', title: 'Audiência de Conciliação', description: 'Vara de Família', date: new Date().toISOString().split('T')[0], time: '14:00', type: 'audiencia' }]);
   const [transactions, setTransactions] = useState<any[]>([{ id: '1', desc: 'Honorários de Sucumbência', val: 5400.50, type: 'receita', status: 'pago', date: '2024-06-12' }]);
 

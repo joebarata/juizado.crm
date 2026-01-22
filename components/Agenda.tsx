@@ -1,7 +1,4 @@
-
 import React, { useEffect, useRef, useState } from 'react';
-
-declare var FullCalendar: any;
 
 interface EventRecord {
   id: string;
@@ -16,6 +13,7 @@ export const Agenda: React.FC<{ events: EventRecord[], setEvents: React.Dispatch
   const calendarRef = useRef<HTMLDivElement>(null);
   const [calendarInstance, setCalendarInstance] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCalendarReady, setIsCalendarReady] = useState(false);
   const [formData, setFormData] = useState<Partial<EventRecord>>({
     type: 'outro',
     date: new Date().toISOString().split('T')[0],
@@ -23,6 +21,14 @@ export const Agenda: React.FC<{ events: EventRecord[], setEvents: React.Dispatch
   });
 
   useEffect(() => {
+    const FullCalendar = (window as any).FullCalendar;
+
+    if (!FullCalendar) {
+      console.warn("Agenda: FullCalendar ainda não carregado. Tentando novamente em breve...");
+      const timer = setTimeout(() => setIsCalendarReady(prev => !prev), 500);
+      return () => clearTimeout(timer);
+    }
+
     if (calendarRef.current && !calendarInstance) {
       const calendar = new FullCalendar.Calendar(calendarRef.current, {
         initialView: 'dayGridMonth',
@@ -67,7 +73,7 @@ export const Agenda: React.FC<{ events: EventRecord[], setEvents: React.Dispatch
         extendedProps: { ...e }
       })));
     }
-  }, [events, calendarInstance]);
+  }, [events, calendarInstance, isCalendarReady]);
 
   const getEventColor = (type: string) => {
     switch(type) {
@@ -108,7 +114,16 @@ export const Agenda: React.FC<{ events: EventRecord[], setEvents: React.Dispatch
           <i className="fas fa-plus text-[10px]"></i> Novo Agendamento
         </button>
       </header>
-      <div className="glass-card p-8"><div ref={calendarRef}></div></div>
+      
+      <div className="glass-card p-8">
+        {!(window as any).FullCalendar && (
+          <div className="flex flex-col items-center justify-center py-20 text-slate-400">
+            <i className="fas fa-circle-notch fa-spin text-2xl mb-4"></i>
+            <p className="text-[10px] font-black uppercase tracking-widest">Carregando Calendário...</p>
+          </div>
+        )}
+        <div ref={calendarRef}></div>
+      </div>
 
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-sm">

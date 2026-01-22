@@ -1,38 +1,21 @@
 import React from 'react';
-import ReactDOM from 'react-dom/client';
+import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 
-/**
- * LexFlow 360 - Bootstrap de Produção
- * Este arquivo é transpilado pelo Babel Standalone no navegador.
- */
+const rootElement = document.getElementById('root');
 
-const init = () => {
-  console.log("LexFlow 360: Inicializando motor...");
-  const rootElement = document.getElementById('root');
-
-  if (rootElement) {
-    try {
-      const root = ReactDOM.createRoot(rootElement);
-      root.render(
-        <React.StrictMode>
-          <App />
-        </React.StrictMode>
-      );
-      console.log("LexFlow 360: Sistema Montado.");
-    } catch (error) {
-      console.error("LexFlow 360: Falha na montagem React ->", error);
-      rootElement.innerHTML = `<div style="padding:40px; color:#f87171; text-align:center;">
-        <h2 style="font-weight:900; margin-bottom:10px;">FALHA NA INICIALIZAÇÃO</h2>
-        <p style="font-size:12px; opacity:0.8;">${error.message}</p>
-      </div>`;
-    }
+if (rootElement) {
+  // Verificação para evitar renderização múltipla
+  if (!window.hasOwnProperty('__LEXFLOW_RENDERED__')) {
+    (window as any).__LEXFLOW_RENDERED__ = true;
+    const root = createRoot(rootElement);
+    root.render(
+      <React.StrictMode>
+        <App />
+      </React.StrictMode>
+    );
+    console.log("LexFlow 360: Motor ativo v5.4.0");
   }
-};
-
-// Garante que o DOM está carregado
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', init);
 } else {
-  init();
+  console.error("Erro Crítico: Container #root não encontrado no DOM.");
 }
