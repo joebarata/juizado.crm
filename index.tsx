@@ -1,14 +1,17 @@
-
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.tsx';
 
-console.log("LexFlow: Sistema de bootstrapping ativado.");
+/**
+ * LexFlow 360 - Bootstrap de Produção
+ * Este arquivo é transpilado pelo Babel Standalone no navegador.
+ */
 
-const startApp = () => {
+const init = () => {
+  console.log("LexFlow 360: Inicializando motor...");
   const rootElement = document.getElementById('root');
+
   if (rootElement) {
-    console.log("LexFlow: Elemento #root encontrado. Iniciando React...");
     try {
       const root = ReactDOM.createRoot(rootElement);
       root.render(
@@ -16,18 +19,20 @@ const startApp = () => {
           <App />
         </React.StrictMode>
       );
-    } catch (err) {
-      console.error("LexFlow Critical Render Error:", err);
+      console.log("LexFlow 360: Sistema Montado.");
+    } catch (error) {
+      console.error("LexFlow 360: Falha na montagem React ->", error);
+      rootElement.innerHTML = `<div style="padding:40px; color:#f87171; text-align:center;">
+        <h2 style="font-weight:900; margin-bottom:10px;">FALHA NA INICIALIZAÇÃO</h2>
+        <p style="font-size:12px; opacity:0.8;">${error.message}</p>
+      </div>`;
     }
-  } else {
-    console.warn("LexFlow: #root não detectado. Tentando novamente em 300ms...");
-    setTimeout(startApp, 300);
   }
 };
 
-// Dispara a inicialização
+// Garante que o DOM está carregado
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', startApp);
+  document.addEventListener('DOMContentLoaded', init);
 } else {
-    startApp();
+  init();
 }
