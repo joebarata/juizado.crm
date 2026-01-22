@@ -1,22 +1,33 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App';
+import App from './App.tsx';
 
-// Verifica se existe a configuração global do WordPress
-const wpConfig = (window as any).lexflowConfig || {};
-if (wpConfig.apiKey) {
-  (process.env as any).API_KEY = wpConfig.apiKey;
-}
+console.log("LexFlow: Sistema de bootstrapping ativado.");
 
-const rootElement = document.getElementById('root');
-if (rootElement) {
-  const root = ReactDOM.createRoot(rootElement);
-  root.render(
-    <React.StrictMode>
-      <div className="lexflow-crm-container">
-        <App />
-      </div>
-    </React.StrictMode>
-  );
+const startApp = () => {
+  const rootElement = document.getElementById('root');
+  if (rootElement) {
+    console.log("LexFlow: Elemento #root encontrado. Iniciando React...");
+    try {
+      const root = ReactDOM.createRoot(rootElement);
+      root.render(
+        <React.StrictMode>
+          <App />
+        </React.StrictMode>
+      );
+    } catch (err) {
+      console.error("LexFlow Critical Render Error:", err);
+    }
+  } else {
+    console.warn("LexFlow: #root não detectado. Tentando novamente em 300ms...");
+    setTimeout(startApp, 300);
+  }
+};
+
+// Dispara a inicialização
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startApp);
+} else {
+    startApp();
 }

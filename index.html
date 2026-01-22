@@ -4,11 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LexFlow 360 - Advocacia Hiperconectada</title>
+    <title>LexFlow 360 - Hostinger WP Preview</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
     <style>
+      /* Isola o CRM do tema do WordPress */
       .lexflow-wp-wrapper {
         all: initial;
         font-family: 'Plus Jakarta Sans', sans-serif;
@@ -27,19 +29,18 @@
       body {
         font-family: 'Plus Jakarta Sans', sans-serif;
         margin: 0;
-        background-color: var(--bg-main);
+        background-color: #020617;
         color: white;
         scroll-behavior: smooth;
         overflow-x: hidden;
       }
 
       .soft-glass {
-        background: rgba(15, 23, 42, 0.4);
-        backdrop-filter: blur(24px);
-        -webkit-backdrop-filter: blur(24px);
+        background: rgba(15, 23, 42, 0.5);
+        backdrop-filter: blur(20px);
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 32px;
-        box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+        box-shadow: 0 20px 60px rgba(0,0,0,0.4);
       }
 
       .dynamic-btn {
@@ -47,13 +48,15 @@
         color: white !important;
         font-weight: 800;
         border-radius: 20px;
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         border: 1px solid rgba(255, 255, 255, 0.1);
+        text-align: center;
+        display: inline-block;
       }
       
       .dynamic-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 30px rgba(37, 99, 235, 0.5);
+        transform: translateY(-4px);
+        box-shadow: 0 15px 40px rgba(37, 99, 235, 0.6);
       }
 
       .animate-fade-up { 
@@ -62,18 +65,14 @@
       }
       
       @keyframes fadeUp {
-        from { opacity: 0; transform: translateY(40px); }
+        from { opacity: 0; transform: translateY(50px); }
         to { opacity: 1; transform: translateY(0); }
       }
 
-      /* Custom Scrollbar for Glossy Look */
       ::-webkit-scrollbar { width: 6px; }
       ::-webkit-scrollbar-track { background: #020617; }
       ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
-      ::-webkit-scrollbar-thumb:hover { background: rgba(37, 99, 235, 0.4); }
-
-      /* Prevent white flash in dark mode */
-      html { background-color: #020617; }
+      ::-webkit-scrollbar-thumb:hover { background: #2563eb; }
     </style>
 <script type="importmap">
 {
@@ -87,7 +86,15 @@
 }
 </script>
 </head>
-<body class="bg-[#020617] text-white">
+<body class="bg-[#020617]">
+    <!-- Mock do WordPress Context -->
+    <script>
+        window.lexflowConfig = {
+            apiKey: '', // Preenchido pelo usuário no painel WP
+            ajaxUrl: '#',
+            nonce: '12345'
+        };
+    </script>
     <div id="root" class="lexflow-wp-wrapper"></div>
 </body>
 </html>

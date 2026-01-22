@@ -1,0 +1,10 @@
+
+<IfModule mod_mime.c>
+  AddType application/javascript .ts
+  AddType application/javascript .tsx
+</IfModule>
+
+# Impede o cache agressivo de arquivos de desenvolvimento durante os testes
+<FilesMatch "\.(ts|tsx|js|jsx)$">
+  Header set Cache-Control "max-age=0, private, no-cache, no-store, must-revalidate"
+</FilesMatch>

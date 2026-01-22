@@ -1,35 +1,35 @@
 
 import React, { useState, useEffect } from 'react';
-import { LandingPage } from './components/LandingPage';
-import { Login } from './components/Login';
-import { Dashboard } from './components/Dashboard';
-import { ClientManager } from './components/ClientManager';
-import { AIAssistant } from './components/AIAssistant';
-import { Agenda } from './components/Agenda';
-import { LawyerManager } from './components/LawyerManager';
-import { FinancialManager } from './components/FinancialManager';
-import { KanbanPipeline } from './components/KanbanPipeline';
-import { StrategicPlanning } from './components/StrategicPlanning';
-import { DocumentTemplates } from './components/DocumentTemplates';
-import { IntelligenceModule } from './components/IntelligenceModule';
-import { LegalLibrary } from './components/LegalLibrary';
-import { MembersArea } from './components/MembersArea';
+import { LandingPage } from './components/LandingPage.tsx';
+import { Login } from './components/Login.tsx';
+import { Dashboard } from './components/Dashboard.tsx';
+import { ClientManager } from './components/ClientManager.tsx';
+import { AIAssistant } from './components/AIAssistant.tsx';
+import { Agenda } from './components/Agenda.tsx';
+import { LawyerManager } from './components/LawyerManager.tsx';
+import { FinancialManager } from './components/FinancialManager.tsx';
+import { KanbanPipeline } from './components/KanbanPipeline.tsx';
+import { StrategicPlanning } from './components/StrategicPlanning.tsx';
+import { DocumentTemplates } from './components/DocumentTemplates.tsx';
+import { IntelligenceModule } from './components/IntelligenceModule.tsx';
+import { LegalLibrary } from './components/LegalLibrary.tsx';
+import { MembersArea } from './components/MembersArea.tsx';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<'landing' | 'login' | 'members' | 'crm'>('landing');
   const [activeTab, setActiveTab] = useState<'dashboard' | 'clients' | 'agenda' | 'lawyers' | 'financial' | 'ai' | 'kanban' | 'planning' | 'documents' | 'intelligence' | 'library'>('dashboard');
   const [user, setUser] = useState<any>(null);
 
-  // Força o modo escuro permanentemente
   useEffect(() => {
     document.documentElement.classList.add('dark');
   }, []);
 
-  // Data Mock
   const [lawyers] = useState([{ id: '1', name: 'Dr. Ricardo Silva', oab: '123.456/SP' }, { id: '2', name: 'Dra. Beatriz Mendes', oab: '654.321/SP' }]);
-  const [clients, setClients] = useState([{ id: '1', name: 'João Silva Oliveira', type: 'PF', doc: '123.456.789-00', email: 'joao@email.com', city: 'São Paulo', cases: 3, history: [] as any[] }]);
-  const [events, setEvents] = useState([{ id: '1', title: 'Audiência de Conciliação', description: 'Vara de Família', date: new Date().toISOString().split('T')[0], time: '14:00', type: 'audiencia' as const }]);
-  const [transactions, setTransactions] = useState([{ id: '1', desc: 'Honorários de Sucumbência', val: 5400.50, type: 'receita' as const, status: 'pago' as const, date: '2024-06-12' }]);
+  
+  // Fix: Explicitly type states as any[] to solve type mismatches with internal component interfaces
+  const [clients, setClients] = useState<any[]>([{ id: '1', name: 'João Silva Oliveira', type: 'PF', doc: '123.456.789-00', email: 'joao@email.com', city: 'São Paulo', cases: 3, history: [] as any[] }]);
+  const [events, setEvents] = useState<any[]>([{ id: '1', title: 'Audiência de Conciliação', description: 'Vara de Família', date: new Date().toISOString().split('T')[0], time: '14:00', type: 'audiencia' }]);
+  const [transactions, setTransactions] = useState<any[]>([{ id: '1', desc: 'Honorários de Sucumbência', val: 5400.50, type: 'receita', status: 'pago', date: '2024-06-12' }]);
 
   const handleLogin = (userData: any) => {
     setUser(userData);
