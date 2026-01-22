@@ -2,20 +2,40 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 
-const rootElement = document.getElementById('root');
+/**
+ * LexFlow Bootstrap Engine v5
+ * Projetado para contornar latência de renderização do WordPress
+ */
+const bootstrap = () => {
+  console.log("LexFlow: Tentando montar aplicação...");
+  const container = document.getElementById('root');
 
-if (rootElement) {
-  // Verificação para evitar renderização múltipla
-  if (!window.hasOwnProperty('__LEXFLOW_RENDERED__')) {
-    (window as any).__LEXFLOW_RENDERED__ = true;
-    const root = createRoot(rootElement);
+  if (!container) {
+    console.warn("LexFlow: #root não encontrado no DOM. Tentando novamente...");
+    setTimeout(bootstrap, 250);
+    return;
+  }
+
+  // Previne múltiplas instâncias em temas com TurboLinks ou AJAX
+  if ((window as any).__LEXFLOW_INITIALIZED__) return;
+  (window as any).__LEXFLOW_INITIALIZED__ = true;
+
+  try {
+    const root = createRoot(container);
     root.render(
       <React.StrictMode>
         <App />
       </React.StrictMode>
     );
-    console.log("LexFlow 360: Motor ativo v5.4.0");
+    console.log("LexFlow 360: Aplicação montada com sucesso.");
+  } catch (error) {
+    console.error("LexFlow 360: Falha crítica na inicialização:", error);
   }
+};
+
+// Inicia o processo de bootstrap
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+  bootstrap();
 } else {
-  console.error("Erro Crítico: Container #root não encontrado no DOM.");
+  document.addEventListener('DOMContentLoaded', bootstrap);
 }
