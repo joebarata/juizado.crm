@@ -1,6 +1,6 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import App from './App.tsx';
+import App from './App';
 
 const container = document.getElementById('root');
 if (container) {
@@ -10,5 +10,5 @@ if (container) {
       <App />
     </React.StrictMode>
   );
-  console.log("LexFlow 360 v8.1: Standalone Engine Active");
+  console.log("LexFlow 360 v8.2: Production Build Active");
 }

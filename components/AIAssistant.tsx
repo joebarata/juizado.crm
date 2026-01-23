@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { translateLegalToNatural } from '../services/geminiService.ts';
+import { translateLegalToNatural } from '../services/geminiService';
 
 export const AIAssistant: React.FC = () => {
   const [input, setInput] = useState('Processo com trânsito em julgado e remessa à contadoria para liquidação de sentença.');
