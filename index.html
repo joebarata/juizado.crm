@@ -15,20 +15,41 @@
         body { background-color: var(--bg-deep); margin: 0; font-family: 'Plus Jakarta Sans', sans-serif; color: white; overflow-x: hidden; }
         #root:empty { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
         #root:empty::after { content: "INICIALIZANDO JUIZADO.COM..."; font-size: 10px; font-weight: 900; letter-spacing: 0.5em; color: var(--accent-blue); animation: pulse 1.5s infinite; }
+        
         @keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+        @keyframes fade-up {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
+        }
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-5px); }
+          75% { transform: translateX(5px); }
+        }
+        
+        .animate-fade-up { animation: fade-up 0.8s ease-out forwards; }
+        .animate-float { animation: float 3s ease-in-out infinite; }
+        .animate-shake { animation: shake 0.4s ease-in-out; }
+        
         .soft-glass { background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; }
-        .dynamic-btn { background: #2563eb; color: white; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: all 0.3s; border-radius: 16px; }
-        .dynamic-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 20px -10px rgba(37, 99, 235, 0.5); }
-        .dynamic-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+        .dynamic-btn { background: #2563eb; color: white; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: all 0.3s; border-radius: 16px; border: none; }
+        .dynamic-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 20px -10px rgba(37, 99, 235, 0.5); background: #3b82f6; }
+        .dynamic-btn:active { transform: scale(0.95); }
+        
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .glow-text { text-shadow: 0 0 20px rgba(59, 130, 246, 0.5); }
     </style>
 
     <script>
-      // Shim para compatibilidade global de produção e prevenção de erros process is not defined
       window.process = { env: { NODE_ENV: 'production', API_KEY: '' } };
     </script>
 
