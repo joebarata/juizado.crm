@@ -27,6 +27,16 @@
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 
+    <!-- SHIM PARA PROCESS.ENV EVITAR REFERENCE ERROR -->
+    <script>
+      window.process = {
+        env: {
+          NODE_ENV: 'production',
+          API_KEY: '' // Será preenchido pelo injetor se disponível
+        }
+      };
+    </script>
+
     <script type="importmap">
 {
   "imports": {

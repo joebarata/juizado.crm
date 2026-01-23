@@ -1,12 +1,12 @@
 import { GoogleGenAI } from "@google/genai";
 
 export const translateLegalToNatural = async (legalUpdate: string): Promise<string> => {
-  // Em ambiente de produção, o API_KEY é injetado pelo host
-  const apiKey = process.env.API_KEY;
+  // Verificação segura do objeto process
+  const apiKey = (window as any).process?.env?.API_KEY || '';
   
   if (!apiKey) {
-    console.error("LexFlow AI: Chave de API não detectada no ambiente.");
-    return "Erro: Configuração de IA pendente no servidor.";
+    console.warn("juizado.com AI: Chave de API não configurada.");
+    return "A análise de IA está temporariamente indisponível (chave ausente).";
   }
 
   try {
