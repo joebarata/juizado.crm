@@ -1,5 +1,5 @@
-
 import React, { useState } from 'react';
+import { authService } from '../services/authService';
 
 interface LoginProps {
   onLogin: (userData: any) => void;
@@ -13,37 +13,34 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onBack }) => {
   const [error, setError] = useState('');
 
   const handleDemoLogin = () => {
-    setEmail('admin@lexflow.com.br');
+    setEmail('admin@admin.com');
     setPassword('admin123');
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
 
-    setTimeout(() => {
-      if (email === 'admin@lexflow.com.br' && password === 'admin123') {
-        onLogin({
-          name: 'Dr. Ricardo Silva',
-          role: 'ADMIN',
-          oab: '123.456/SP',
-          avatar: 'https://ui-avatars.com/api/?name=Ricardo+Silva&background=2563eb&color=fff'
-        });
+    try {
+      const user = await authService.authenticate(email, password);
+      if (user) {
+        onLogin(user);
       } else {
-        setError('Acesso negado. Credenciais incompatíveis.');
-        setIsLoading(false);
+        setError('Acesso negado. Credenciais inválidas ou usuário inativo.');
       }
-    }, 1500);
+    } catch (err) {
+      setError('Falha na comunicação com o servidor de autenticação.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-slate-950 p-6 relative overflow-hidden font-sans">
-      {/* Background Tech Effects */}
       <div className="absolute inset-0 z-0">
         <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10"></div>
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-600/20 rounded-full blur-[160px] animate-pulse"></div>
-        <div className="absolute top-[20%] right-[10%] w-[300px] h-[300px] bg-indigo-600/10 rounded-full blur-[120px]"></div>
       </div>
 
       <div className="w-full max-w-[480px] relative z-10">
@@ -53,7 +50,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onBack }) => {
           </button>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Servidor: Norte-Virgínia</span>
+            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Servidor Online</span>
           </div>
         </div>
 
@@ -64,17 +61,17 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onBack }) => {
               <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-xl bg-slate-900 border border-white/10 flex items-center justify-center text-[10px] font-black">360</div>
             </div>
             <h1 className="text-3xl font-black tracking-tighter text-white leading-tight">Painel de Controle</h1>
-            <p className="text-[10px] font-black text-slate-500 tracking-[0.4em] uppercase mt-3">Sessão Encriptada AES-256</p>
+            <p className="text-[10px] font-black text-slate-500 tracking-[0.4em] uppercase mt-3">Sessão Encriptada LexFlow</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-8">
             <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">ID de Acesso</label>
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">E-mail de Acesso</label>
               <div className="relative group">
                 <i className="fas fa-envelope absolute left-5 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-blue-500 transition-colors"></i>
                 <input 
                   required type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                  placeholder="advogado@escritorio.com"
+                  placeholder="seu@email.com"
                   className="w-full pl-14 pr-6 py-5 bg-black/40 border border-white/5 rounded-2xl text-sm font-medium outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-white placeholder:text-slate-700"
                 />
               </div>
@@ -82,8 +79,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onBack }) => {
 
             <div className="space-y-3">
               <div className="flex justify-between items-center ml-1">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Código Secreto</label>
-                <button type="button" className="text-[9px] font-black uppercase text-blue-500 hover:underline">Esqueci a Senha</button>
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Senha Privada</label>
               </div>
               <div className="relative group">
                 <i className="fas fa-lock absolute left-5 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-blue-500 transition-colors"></i>
@@ -112,11 +108,8 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onBack }) => {
 
           <div className="mt-12 pt-8 border-t border-white/5 space-y-6">
             <button onClick={handleDemoLogin} className="w-full py-5 rounded-2xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-blue-600 hover:text-white hover:border-blue-500 transition-all group">
-              <i className="fas fa-flask mr-2 group-hover:animate-bounce"></i> Ingressar como Visitante (Demo)
+              <i className="fas fa-flask mr-2 group-hover:animate-bounce"></i> Usar Dados do Administrador
             </button>
-            <p className="text-center text-[9px] text-slate-600 font-bold uppercase tracking-widest">
-              LexFlow 360 v4.0.2 - Protected by CloudFlare
-            </p>
           </div>
         </div>
       </div>

@@ -13,6 +13,7 @@ import { DocumentTemplates } from './components/DocumentTemplates';
 import { IntelligenceModule } from './components/IntelligenceModule';
 import { LegalLibrary } from './components/LegalLibrary';
 import { MembersArea } from './components/MembersArea';
+import { authService } from './services/authService';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<'landing' | 'login' | 'members' | 'crm'>('landing');
@@ -21,6 +22,10 @@ const App: React.FC = () => {
 
   useEffect(() => {
     document.documentElement.classList.add('dark');
+    
+    // Inicializa o "Banco de Dados" e cria o Admin se não existir
+    authService.init();
+
     const savedUser = localStorage.getItem('lexflow_session');
     if (savedUser) {
       setUser(JSON.parse(savedUser));
@@ -28,7 +33,6 @@ const App: React.FC = () => {
     }
   }, []);
 
-  const [lawyers] = useState([{ id: '1', name: 'Dr. Ricardo Silva', oab: '123.456/SP' }, { id: '2', name: 'Dra. Beatriz Mendes', oab: '654.321/SP' }]);
   const [clients, setClients] = useState<any[]>([{ id: '1', name: 'João Silva Oliveira', type: 'PF', doc: '123.456.789-00', email: 'joao@email.com', city: 'São Paulo', cases: 3, history: [] }]);
   const [events, setEvents] = useState<any[]>([{ id: '1', title: 'Audiência de Conciliação', description: 'Vara de Família', date: new Date().toISOString().split('T')[0], time: '14:00', type: 'audiencia' }]);
   const [transactions, setTransactions] = useState<any[]>([{ id: '1', desc: 'Honorários de Sucumbência', val: 5400.50, type: 'receita', status: 'pago', date: '2024-06-12' }]);
@@ -54,10 +58,13 @@ const App: React.FC = () => {
     { id: 'library', label: 'Acervo & Teses', icon: 'fa-book-bookmark' },
     { id: 'clients', label: 'Clientes', icon: 'fa-user-tie' },
     { id: 'agenda', label: 'Prazos & Agenda', icon: 'fa-calendar-alt' },
-    { id: 'lawyers', label: 'Equipe Jurídica', icon: 'fa-users-gear' },
+    { id: 'lawyers', label: 'Equipe Jurídica', icon: 'fa-users-gear', adminOnly: true },
     { id: 'financial', label: 'Financeiro 360', icon: 'fa-wallet' },
     { id: 'ai', label: 'LexFlow AI', icon: 'fa-wand-magic-sparkles' },
   ];
+
+  // Filtra itens de menu baseado no cargo do usuário
+  const filteredMenuItems = menuItems.filter(item => !item.adminOnly || user?.role === 'ADMIN');
 
   if (currentView === 'landing') return <LandingPage onGoToLogin={() => setCurrentView('login')} onGoToMembers={() => setCurrentView('members')} />;
   if (currentView === 'login') return <Login onLogin={handleLogin} onBack={() => setCurrentView('landing')} />;
@@ -78,7 +85,7 @@ const App: React.FC = () => {
           </div>
         </div>
         <nav className="flex-1 px-4 space-y-1 overflow-y-auto custom-scrollbar">
-          {menuItems.map((item) => (
+          {filteredMenuItems.map((item) => (
             <button key={item.id} onClick={() => setActiveTab(item.id as any)} className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-xl text-sm font-bold transition-all group ${activeTab === item.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-400 hover:bg-white/5'}`}>
               <i className={`fas ${item.icon} w-5 text-lg transition-transform group-hover:scale-110`}></i>
               <span className="tracking-tight">{item.label}</span>
@@ -105,17 +112,17 @@ const App: React.FC = () => {
           </div>
           <div className="flex items-center gap-4">
             <div className="text-right hidden md:block">
-              <p className="text-xs font-black text-white">{user?.name || 'Dr. Ricardo Silva'}</p>
-              <p className="text-[9px] font-bold text-blue-500 uppercase tracking-widest">{user?.oab || '123.456/SP'}</p>
+              <p className="text-xs font-black text-white">{user?.name}</p>
+              <p className="text-[9px] font-bold text-blue-500 uppercase tracking-widest">PERFIL: {user?.role}</p>
             </div>
-            <img src={user?.avatar || 'https://ui-avatars.com/api/?name=Ricardo+Silva&background=2563eb&color=fff'} className="w-10 h-10 rounded-xl border border-white/20" alt="Avatar" />
+            <img src={user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=2563eb&color=fff`} className="w-10 h-10 rounded-xl border border-white/20" alt="Avatar" />
           </div>
         </header>
 
         <main className="flex-1 overflow-y-auto p-10 custom-scrollbar bg-slate-950">
           <div className="max-w-7xl mx-auto pb-10">
             {activeTab === 'dashboard' && <Dashboard setActiveTab={setActiveTab} />}
-            {activeTab === 'intelligence' && <IntelligenceModule clients={clients} lawyers={lawyers} onDelegate={() => {}} />}
+            {activeTab === 'intelligence' && <IntelligenceModule clients={clients} lawyers={authService.getUsers()} onDelegate={() => {}} />}
             {activeTab === 'clients' && <ClientManager clients={clients} onAdd={(c) => setClients([...clients, c])} />}
             {activeTab === 'financial' && <FinancialManager transactions={transactions} onAdd={(t) => setTransactions([t, ...transactions])} />}
             {activeTab === 'agenda' && <Agenda events={events} setEvents={setEvents} />}
