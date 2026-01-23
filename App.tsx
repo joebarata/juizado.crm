@@ -54,6 +54,7 @@ const App: React.FC = () => {
       const res = await fetch(url, options);
       const contentType = res.headers.get("content-type");
       
+      // Se o servidor responder com HTML (index.html em 404), interrompemos para evitar JSON loop
       if (contentType && contentType.includes("text/html")) {
         throw new Error("HTML_RESPONSE");
       }
@@ -65,9 +66,9 @@ const App: React.FC = () => {
       return await res.json();
     } catch (e: any) {
       if (e.message === "HTML_RESPONSE") {
-        setErrorStatus("Erro de Configuração: O backend juizado.com respondeu com HTML (Provável erro de proxy ou arquivo inexistente).");
+        setErrorStatus("Erro de Ligação: O servidor juizado.com está a responder em modo de manutenção ou erro de configuração de rota.");
       } else {
-        console.warn("API Error (Silenced for stability):", e.message);
+        console.warn("API Error Silenced:", e.message);
       }
       return null;
     }
@@ -115,11 +116,11 @@ const App: React.FC = () => {
 
   if (errorStatus) return (
     <div className="h-screen w-full flex items-center justify-center bg-slate-950 p-8 text-center">
-      <div className="max-w-md space-y-8 soft-glass p-12 border-rose-500/20">
-        <div className="text-rose-500 text-6xl mb-4 animate-bounce"><i className="fas fa-satellite-dish"></i></div>
+      <div className="max-w-md space-y-8 soft-glass p-12 border-rose-500/20 shadow-2xl">
+        <div className="text-rose-500 text-6xl mb-4 animate-bounce"><i className="fas fa-server"></i></div>
         <h1 className="text-2xl font-black text-white uppercase tracking-tighter">juizado.com</h1>
         <p className="text-slate-400 font-medium text-sm leading-relaxed">{errorStatus}</p>
-        <button onClick={() => window.location.reload()} className="dynamic-btn w-full py-4 rounded-2xl text-xs uppercase tracking-widest">Reconectar ao Servidor</button>
+        <button onClick={() => window.location.reload()} className="dynamic-btn w-full py-4 rounded-2xl text-xs uppercase tracking-widest">Reconectar ao Juizado</button>
       </div>
     </div>
   );
@@ -179,7 +180,7 @@ const App: React.FC = () => {
       <main className="flex-1 overflow-y-auto pt-24 pb-32 lg:pb-32 lg:pt-32 px-4 md:px-12 custom-scrollbar bg-slate-950">
         <div className="max-w-7xl mx-auto pb-20">
           <div className="flex items-center gap-4 mb-10 animate-in fade-in slide-in-from-left-4 duration-1000">
-            <span className="text-[10px] font-black text-slate-600 uppercase tracking-[0.6em]">SaaS Engine 2.5</span>
+            <span className="text-[10px] font-black text-slate-600 uppercase tracking-[0.6em]">SaaS juizado.com</span>
             <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent"></div>
             <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest bg-blue-500/5 px-6 py-2 rounded-full border border-blue-500/10 flex items-center gap-3">
               <i className="fas fa-circle text-[6px] animate-pulse"></i>

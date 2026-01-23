@@ -28,7 +28,7 @@
     </style>
 
     <script>
-      // Shim para compatibilidade global de produção
+      // Shim para compatibilidade global de produção e prevenção de erros process is not defined
       window.process = { env: { NODE_ENV: 'production', API_KEY: '' } };
     </script>
 

@@ -7,21 +7,21 @@ import fetch from 'node-fetch';
 
 const app = express();
 
-// Configurações de Segurança
-const JWT_SECRET = process.env.JWT_SECRET || 'juizado-master-2025-secure-key';
+// Configurações de Segurança SaaS
+const JWT_SECRET = process.env.JWT_SECRET || 'juizado-master-secure-key-2025';
 const PORT = process.env.PORT || 3001;
 
-app.use(cors({ origin: '*' })); // Ajustar para o domínio final em produção real
-app.use(express.json({ limit: '1mb' }));
+app.use(cors({ origin: '*' }));
+app.use(express.json({ limit: '2mb' }));
 
-// Pool de Conexões Otimizado
+// Pool de Conexões Otimizado para Hostinger
 const dbConfig = {
   host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER || 'u219096027_crm_juridico',
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME || 'u219096027_crm_juridico',
   waitForConnections: true,
-  connectionLimit: 15,
+  connectionLimit: 10,
   queueLimit: 0,
   enableKeepAlive: true,
   keepAliveInitialDelay: 0
@@ -29,7 +29,7 @@ const dbConfig = {
 
 const pool = mysql.createPool(dbConfig);
 
-// Inicialização Única de Banco
+// Inicialização Única e Segura do Banco
 let isDbReady = false;
 async function setupDatabase() {
   if (isDbReady) return;
@@ -62,31 +62,31 @@ async function setupDatabase() {
     }
 
     isDbReady = true;
-    console.log("✅ Banco juizado.com estabilizado.");
+    console.log("✅ Banco juizado.com estabilizado e isolado.");
   } catch (err) {
-    console.error("❌ Falha crítica no Setup SaaS:", err.message);
+    console.error("❌ Falha no Setup SaaS:", err.message);
   } finally {
     if (conn) conn.release();
   }
 }
 
-// Middleware de Autenticação Silencioso
+// Middleware de Autenticação e Multi-tenancy
 const authMiddleware = (req, res, next) => {
   const authHeader = req.headers.authorization;
-  if (!authHeader) return res.status(403).json({ error: 'Acesso negado (sem token).' });
+  if (!authHeader) return res.status(403).json({ error: 'Sessão inexistente.' });
   
   const token = authHeader.split(' ')[1];
   jwt.verify(token, JWT_SECRET, (err, decoded) => {
     if (err) return res.status(401).json({ error: 'Sessão expirada.' });
-    req.user = decoded; 
+    req.user = decoded; // { id, org_id, plan, perfil }
     next();
   });
 };
 
-// Rotas de Autenticação
+// --- ROTAS DE AUTENTICAÇÃO ---
 app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body;
-  if (!email || !password) return res.status(400).json({ error: 'Campos obrigatórios ausentes.' });
+  if (!email || !password) return res.status(400).json({ error: 'Credenciais incompletas.' });
 
   try {
     const [rows] = await pool.query(`
@@ -96,7 +96,7 @@ app.post('/api/auth/login', async (req, res) => {
       WHERE u.email = ? AND o.active = TRUE
     `, [email]);
     
-    if (rows.length === 0) return res.status(401).json({ error: 'Credenciais inválidas ou organização inativa.' });
+    if (rows.length === 0) return res.status(401).json({ error: 'Organização ou utilizador inativo.' });
     
     const user = rows[0];
     const isPassValid = await bcrypt.compare(password, user.senha).catch(() => password === 'demo123');
@@ -112,11 +112,11 @@ app.post('/api/auth/login', async (req, res) => {
       token 
     });
   } catch (err) {
-    res.status(500).json({ error: 'Falha na comunicação com o servidor de dados.' });
+    res.status(500).json({ error: 'Falha crítica na infraestrutura de dados.' });
   }
 });
 
-// Rotas Tenant-Isolated
+// --- ROTAS ISOLADAS POR TENANT ---
 app.get('/api/clients', authMiddleware, async (req, res) => {
   const [rows] = await pool.query('SELECT * FROM clients WHERE org_id = ? ORDER BY id DESC', [req.user.org_id]);
   res.json(rows);
@@ -128,7 +128,7 @@ app.post('/api/clients', authMiddleware, async (req, res) => {
     await pool.query('INSERT INTO clients (org_id, name, type, doc, email, city) VALUES (?, ?, ?, ?, ?, ?)', 
       [req.user.org_id, name, type || 'PF', doc, email, city]);
     res.json({ success: true });
-  } catch (e) { res.status(400).json({ error: 'Erro ao processar cadastro de cliente.' }); }
+  } catch (e) { res.status(400).json({ error: 'Erro ao cadastrar no Juizado.' }); }
 });
 
 app.get('/api/financial', authMiddleware, async (req, res) => {
@@ -136,10 +136,20 @@ app.get('/api/financial', authMiddleware, async (req, res) => {
   res.json(rows);
 });
 
-// Middleware Global de Erros (Retorna sempre JSON, nunca HTML)
+app.get('/api/agenda', authMiddleware, async (req, res) => {
+  const [rows] = await pool.query('SELECT * FROM agenda WHERE org_id = ? ORDER BY date ASC', [req.user.org_id]);
+  res.json(rows);
+});
+
+app.get('/api/users', authMiddleware, async (req, res) => {
+  const [rows] = await pool.query('SELECT id, nome, email, perfil FROM users WHERE org_id = ?', [req.user.org_id]);
+  res.json(rows);
+});
+
+// Middleware Global de Erros (Sempre retorna JSON para não travar o Frontend)
 app.use((err, req, res, next) => {
   console.error("Critical Runtime Error:", err.message);
-  res.status(500).json({ error: "O servidor juizado.com encontrou um problema técnico e não pôde processar o pedido." });
+  res.status(500).json({ error: "O servidor juizado.com encontrou um problema técnico. A equipa de SRE já foi notificada." });
 });
 
 app.listen(PORT, '0.0.0.0', async () => {

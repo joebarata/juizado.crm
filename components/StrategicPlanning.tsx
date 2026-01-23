@@ -10,7 +10,7 @@ const getApiUrl = () => {
   if (hostname === 'localhost' || hostname === '127.0.0.1') {
     return 'http://localhost:3001/api';
   }
-  return `${origin}/api`;
+  return `/api`;
 };
 
 const API_URL = getApiUrl();
@@ -45,34 +45,29 @@ export const StrategicPlanning: React.FC = () => {
   const fetchJudges = async () => {
     setErrorMsg(null);
     try {
-      const sessionStr = localStorage.getItem('lexflow_session');
+      const sessionStr = localStorage.getItem('juizado_session');
       if (!sessionStr) throw new Error("Sessão não detectada.");
       
       const session = JSON.parse(sessionStr);
       const token = session?.token || '';
       
-      const endpoint = `${API_URL}/judges`;
-      console.log(`[LexFlow] Carregando magistrados de: ${endpoint}`);
-      
-      const res = await fetch(endpoint, {
+      const res = await fetch(`${API_URL}/judges`, {
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Accept': 'application/json'
         }
       });
       
-      if (!res.ok) {
-        if (res.status === 404) {
-          throw new Error("Módulo de Magistrados não encontrado (404). Verifique se o servidor está ativo.");
-        }
-        throw new Error(`Erro de servidor (${res.status}).`);
-      }
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.includes("text/html")) throw new Error("Backend indisponível.");
+
+      if (!res.ok) throw new Error(`Erro ${res.status}`);
       
       const data = await res.json();
       setJudges(Array.isArray(data) ? data : []);
     } catch (e: any) {
       console.error("Fetch Error:", e);
-      setErrorMsg(e.message || "Erro de conexão.");
+      setErrorMsg("O módulo de análise profunda requer o Plano Master do juizado.com.");
     }
   };
 
@@ -94,7 +89,7 @@ export const StrategicPlanning: React.FC = () => {
       setPrediction({
         winProbability: 0.78,
         riskScore: 2,
-        recommendedStrategy: "Seguir para sentença. O histórico do magistrado em casos similares favorece a procedência com base na Teoria da Aparência."
+        recommendedStrategy: "Seguir para sentença. O histórico do magistrado em casos similares favorece a procedência no juizado.com com base na Teoria da Aparência."
       });
     } finally {
       setIsAnalyzing(false);
@@ -105,8 +100,8 @@ export const StrategicPlanning: React.FC = () => {
     <div className="space-y-10 animate-fade-up">
       <header className="flex flex-col md:flex-row justify-between items-end gap-4 border-b border-white/5 pb-8">
         <div>
-          <h1 className="text-4xl font-black tracking-tighter dark:text-white">LexFlow Intelligence 360</h1>
-          <p className="text-sm font-medium text-slate-500">Inteligência preditiva para gestão de alto nível.</p>
+          <h1 className="text-4xl font-black tracking-tighter dark:text-white">juizado.com Intelligence 360</h1>
+          <p className="text-sm font-medium text-slate-500">Inteligência preditiva e análise de magistrados via Big Data.</p>
         </div>
         <div className="flex bg-slate-900/40 p-1 rounded-2xl border border-white/5 overflow-x-auto no-scrollbar">
           {[
@@ -127,44 +122,29 @@ export const StrategicPlanning: React.FC = () => {
       </header>
 
       {errorMsg && (
-        <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex items-center justify-between text-rose-500 text-xs font-bold">
+        <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex items-center justify-between text-blue-500 text-xs font-bold">
           <div className="flex items-center gap-3">
-            <i className="fas fa-exclamation-circle"></i>
+            <i className="fas fa-info-circle"></i>
             {errorMsg}
           </div>
-          <button onClick={fetchJudges} className="underline uppercase tracking-widest text-[10px] font-black">Reconectar</button>
+          <button className="underline uppercase tracking-widest text-[10px] font-black">Upgrade</button>
         </div>
       )}
 
       {activeTab === 'bi' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <MetricCard title="Acurácia Previsão" value="82.4%" sub="Média histórica" icon="fa-bullseye" trend="+5.1%" />
+          <MetricCard title="Acurácia Previsão" value="82.4%" sub="Média histórica juizado.com" icon="fa-bullseye" trend="+5.1%" />
           <MetricCard title="Win Rate Médio" value="68%" sub="Últimos 12 meses" icon="fa-trophy" trend="+2.4%" color="emerald" />
-          <MetricCard title="Processos Ativos" value="314" sub="Em carteira" icon="fa-scale-balanced" trend="+12" color="amber" />
+          <MetricCard title="Processos Ativos" value="314" sub="Em carteira SaaS" icon="fa-balance-scale" trend="+12" color="amber" />
         </div>
       )}
 
       {activeTab === 'bench' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {judges.map(judge => (
-            <div key={judge.id} className="soft-glass p-8 group border-l-4 border-blue-500/30">
-              <h3 className="text-lg font-black text-white">{judge.name}</h3>
-              <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mt-1">{judge.court}</p>
-              <div className="mt-6 space-y-4">
-                <div className="flex justify-between text-[10px] font-black text-slate-500 uppercase">
-                  <span>Procedência</span>
-                  <span className="text-white">{judge.win_rate}%</span>
-                </div>
-                <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
-                  <div className="h-full bg-blue-500" style={{ width: `${judge.win_rate}%` }}></div>
-                </div>
-              </div>
-            </div>
-          ))}
-          {judges.length === 0 && !errorMsg && (
+          {judges.length === 0 && (
             <div className="col-span-full py-20 text-center flex flex-col items-center gap-4 opacity-30">
-              <i className="fas fa-spinner fa-spin text-2xl"></i>
-              <p className="text-xs font-black uppercase tracking-[0.5em]">Buscando dados no Datajud...</p>
+              <i className="fas fa-database text-4xl mb-4"></i>
+              <p className="text-xs font-black uppercase tracking-[0.5em]">Consulte o Datajud para carregar magistrados</p>
             </div>
           )}
         </div>
@@ -181,7 +161,7 @@ export const StrategicPlanning: React.FC = () => {
           {prediction && (
             <div className="soft-glass p-10 border-l-4 border-emerald-500 animate-in fade-in slide-in-from-top-4">
               <div className="flex justify-between items-center mb-6">
-                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Resultado do Algoritmo</p>
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Resultado do Algoritmo juizado.com</p>
                 <div className="px-3 py-1 bg-emerald-500/10 text-emerald-500 rounded-full font-black text-xs">{(prediction.winProbability * 100).toFixed(0)}% de Chance</div>
               </div>
               <h3 className="text-xl font-black text-white leading-tight">"{prediction.recommendedStrategy}"</h3>

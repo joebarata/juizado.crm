@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { 
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip 
@@ -45,19 +44,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ setActiveTab }) => {
       <header className="flex flex-col md:flex-row justify-between items-end gap-4">
         <div>
           <h1 className="text-4xl font-black tracking-tighter text-white">Dashboard Estratégico</h1>
-          <p className="text-sm font-medium text-slate-400">Inteligência de dados para sua banca jurídica.</p>
+          <p className="text-sm font-medium text-slate-400">Inteligência de dados para sua banca jurídica no juizado.com.</p>
         </div>
         <div className="flex gap-3">
           <div className="px-4 py-2 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center gap-3">
             <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
-            <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Servidor Online</span>
+            <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest">SaaS Cloud Online</span>
           </div>
         </div>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard title="Total Clientes" value="1.248" icon="fa-users" color="bg-blue-500" trend="+12%" onClick={() => setActiveTab('clients')} />
-        <MetricCard title="Processos" value="314" icon="fa-gavel" color="bg-emerald-500" trend="+5.4%" onClick={() => setActiveTab('planning')} />
+        <MetricCard title="Processos" value="314" icon="fa-balance-scale" color="bg-emerald-500" trend="+5.4%" onClick={() => setActiveTab('planning')} />
         <MetricCard title="Faturamento" value="R$ 84k" icon="fa-wallet" color="bg-amber-500" trend="+8%" onClick={() => setActiveTab('financial')} />
         <MetricCard title="Prazos Hoje" value="08" icon="fa-calendar-check" color="bg-rose-500" trend="0 pendente" onClick={() => setActiveTab('agenda')} />
       </div>
@@ -95,9 +94,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ setActiveTab }) => {
             <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center text-white mb-6">
               <i className="fas fa-wand-magic-sparkles text-xl"></i>
             </div>
-            <h3 className="text-xl font-black text-white mb-4">LexFlow AI Intelligence</h3>
+            <h3 className="text-xl font-black text-white mb-4">juizado.com AI Intelligence</h3>
             <p className="text-sm text-blue-100 font-medium leading-relaxed">
-              Analise andamentos complexos e gere resumos automáticos para seus clientes em segundos.
+              Analise andamentos complexos e gere resumos automáticos para seus clientes em segundos usando a rede neural Gemini.
             </p>
           </div>
           <button 

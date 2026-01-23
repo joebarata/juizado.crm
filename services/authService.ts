@@ -7,11 +7,11 @@ export interface AuthResponse {
 
 export const authService = {
   authenticate: async (email: string, pass: string): Promise<AuthResponse | null> => {
-    // 1. Bypass Local / Demo
+    // 1. Bypass Local / Demo juizado.com
     if (email === 'demo@juizado.com' && pass === 'demo123') {
       return { 
-        user: { id: 0, nome: 'Advogado Demo', plan: 'pro', orgName: 'Demo Office', perfil: 'admin' }, 
-        token: 'demo-token-bypass-saas' 
+        user: { id: 0, nome: 'Advogado Demo', plan: 'pro', orgName: 'Juizado Demo Office', perfil: 'admin' }, 
+        token: 'demo-token-bypass-saas-juizado' 
       };
     }
 
@@ -26,11 +26,11 @@ export const authService = {
       
       // 2. Proteção contra Erro de Proxy / Servidor em Down (HTML)
       if (contentType && contentType.includes("text/html")) {
-        throw new Error('A infraestrutura juizado.com está temporariamente indisponível. Verifique o servidor Apache/Node na Hostinger.');
+        throw new Error('A infraestrutura juizado.com está temporariamente indisponível (Erro de Rota Apache).');
       }
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Credenciais negadas pelo servidor central.');
+      if (!res.ok) throw new Error(data.error || 'Acesso negado pelo servidor central juizado.com.');
       
       return data;
     } catch (err: any) {
