@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-br" class="dark">
 <head>
@@ -29,12 +28,8 @@
     </style>
 
     <script>
-      window.process = {
-        env: {
-          NODE_ENV: 'production',
-          API_KEY: '' 
-        }
-      };
+      // Shim para compatibilidade global de produção
+      window.process = { env: { NODE_ENV: 'production', API_KEY: '' } };
     </script>
 
     <script type="importmap">

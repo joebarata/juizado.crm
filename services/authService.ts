@@ -1,4 +1,3 @@
-
 const API_URL = window.location.origin.includes('localhost') ? 'http://localhost:3001/api' : '/api';
 
 export interface AuthResponse {
@@ -8,11 +7,11 @@ export interface AuthResponse {
 
 export const authService = {
   authenticate: async (email: string, pass: string): Promise<AuthResponse | null> => {
-    // Modo Demo Offline
+    // 1. Bypass Local / Demo
     if (email === 'demo@juizado.com' && pass === 'demo123') {
       return { 
         user: { id: 0, nome: 'Advogado Demo', plan: 'pro', orgName: 'Demo Office', perfil: 'admin' }, 
-        token: 'demo-token-bypass' 
+        token: 'demo-token-bypass-saas' 
       };
     }
 
@@ -24,15 +23,18 @@ export const authService = {
       });
       
       const contentType = res.headers.get("content-type");
+      
+      // 2. Proteção contra Erro de Proxy / Servidor em Down (HTML)
       if (contentType && contentType.includes("text/html")) {
-        throw new Error('Erro de Conexão: O servidor juizado.com está a responder com uma página HTML em vez de dados. Verifique a configuração do proxy.');
+        throw new Error('A infraestrutura juizado.com está temporariamente indisponível. Verifique o servidor Apache/Node na Hostinger.');
       }
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Credenciais inválidas ou organização inativa.');
+      if (!res.ok) throw new Error(data.error || 'Credenciais negadas pelo servidor central.');
       
       return data;
     } catch (err: any) {
+      console.error("Auth Fail:", err.message);
       throw err;
     }
   }

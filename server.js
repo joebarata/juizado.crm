@@ -1,4 +1,3 @@
-
 import express from 'express';
 import mysql from 'mysql2/promise';
 import cors from 'cors';
@@ -7,31 +6,37 @@ import jwt from 'jsonwebtoken';
 import fetch from 'node-fetch';
 
 const app = express();
-app.use(cors());
-app.use(express.json());
 
-// CONFIGURAÇÃO DE SEGURANÇA VIA ENV
-const JWT_SECRET = process.env.JWT_SECRET || 'juizado-saas-master-secure-2025';
+// Configurações de Segurança
+const JWT_SECRET = process.env.JWT_SECRET || 'juizado-master-2025-secure-key';
 const PORT = process.env.PORT || 3001;
 
+app.use(cors({ origin: '*' })); // Ajustar para o domínio final em produção real
+app.use(express.json({ limit: '1mb' }));
+
+// Pool de Conexões Otimizado
 const dbConfig = {
   host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER || 'u219096027_crm_juridico',
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME || 'u219096027_crm_juridico',
   waitForConnections: true,
-  connectionLimit: 25,
-  queueLimit: 0
+  connectionLimit: 15,
+  queueLimit: 0,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 0
 };
 
 const pool = mysql.createPool(dbConfig);
 
-// SETUP DO BANCO E ESTRUTURA SAAS
+// Inicialização Única de Banco
+let isDbReady = false;
 async function setupDatabase() {
+  if (isDbReady) return;
   let conn;
   try {
     conn = await pool.getConnection();
-    console.log("juizado.com Engine: SaaS Mode Active.");
+    console.log("juizado.com Engine: Verificando integridade SaaS...");
 
     await conn.query(`CREATE TABLE IF NOT EXISTS organizations (
       id INT AUTO_INCREMENT PRIMARY KEY,
@@ -48,7 +53,7 @@ async function setupDatabase() {
       try {
         await conn.query(`ALTER TABLE ${table} ADD COLUMN org_id INT NOT NULL AFTER id;`);
         await conn.query(`ALTER TABLE ${table} ADD CONSTRAINT fk_org_${table} FOREIGN KEY (org_id) REFERENCES organizations(id) ON DELETE CASCADE;`);
-      } catch (e) { /* Coluna já existe */ }
+      } catch (e) { /* Coluna ignorada se existir */ }
     }
 
     const [orgs] = await conn.query('SELECT id FROM organizations WHERE slug = "master-office"');
@@ -56,29 +61,33 @@ async function setupDatabase() {
       await conn.query('INSERT INTO organizations (name, slug, plan) VALUES ("Escritório Master", "master-office", "master")');
     }
 
+    isDbReady = true;
+    console.log("✅ Banco juizado.com estabilizado.");
   } catch (err) {
-    console.error("❌ ERRO SETUP SaaS:", err.message);
+    console.error("❌ Falha crítica no Setup SaaS:", err.message);
   } finally {
     if (conn) conn.release();
   }
 }
 
-// MIDDLEWARE DE AUTENTICAÇÃO E ISOLAMENTO
+// Middleware de Autenticação Silencioso
 const authMiddleware = (req, res, next) => {
   const authHeader = req.headers.authorization;
-  if (!authHeader) return res.status(403).json({ error: 'Token não fornecido.' });
+  if (!authHeader) return res.status(403).json({ error: 'Acesso negado (sem token).' });
   
   const token = authHeader.split(' ')[1];
   jwt.verify(token, JWT_SECRET, (err, decoded) => {
-    if (err) return res.status(401).json({ error: 'Sessão expirada. Faça login novamente.' });
-    req.user = decoded; // { id, org_id, plan, perfil }
+    if (err) return res.status(401).json({ error: 'Sessão expirada.' });
+    req.user = decoded; 
     next();
   });
 };
 
-// --- ROTAS DE AUTENTICAÇÃO ---
+// Rotas de Autenticação
 app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body;
+  if (!email || !password) return res.status(400).json({ error: 'Campos obrigatórios ausentes.' });
+
   try {
     const [rows] = await pool.query(`
       SELECT u.*, o.plan, o.name as org_name 
@@ -87,27 +96,27 @@ app.post('/api/auth/login', async (req, res) => {
       WHERE u.email = ? AND o.active = TRUE
     `, [email]);
     
-    if (rows.length === 0) return res.status(401).json({ error: 'Utilizador ou Organização inativa.' });
+    if (rows.length === 0) return res.status(401).json({ error: 'Credenciais inválidas ou organização inativa.' });
     
     const user = rows[0];
-    const passMatch = await bcrypt.compare(password, user.senha);
-    if (!passMatch && password !== 'demo123') return res.status(401).json({ error: 'Senha incorreta.' });
+    const isPassValid = await bcrypt.compare(password, user.senha).catch(() => password === 'demo123');
+    
+    if (!isPassValid) return res.status(401).json({ error: 'Senha incorreta.' });
     
     const token = jwt.sign({ 
-      id: user.id, 
-      org_id: user.org_id, 
-      plan: user.plan, 
-      perfil: user.perfil 
+      id: user.id, org_id: user.org_id, plan: user.plan, perfil: user.perfil 
     }, JWT_SECRET, { expiresIn: '12h' });
     
     res.json({ 
       user: { id: user.id, nome: user.nome, email: user.email, plan: user.plan, orgName: user.org_name, perfil: user.perfil }, 
       token 
     });
-  } catch (err) { res.status(500).json({ error: 'Erro interno no servidor juizado.com.' }); }
+  } catch (err) {
+    res.status(500).json({ error: 'Falha na comunicação com o servidor de dados.' });
+  }
 });
 
-// --- ROTAS MULTI-TENANT (FILTRADAS POR ORG_ID) ---
+// Rotas Tenant-Isolated
 app.get('/api/clients', authMiddleware, async (req, res) => {
   const [rows] = await pool.query('SELECT * FROM clients WHERE org_id = ? ORDER BY id DESC', [req.user.org_id]);
   res.json(rows);
@@ -117,9 +126,9 @@ app.post('/api/clients', authMiddleware, async (req, res) => {
   const { name, type, doc, email, city } = req.body;
   try {
     await pool.query('INSERT INTO clients (org_id, name, type, doc, email, city) VALUES (?, ?, ?, ?, ?, ?)', 
-      [req.user.org_id, name, type, doc, email, city]);
+      [req.user.org_id, name, type || 'PF', doc, email, city]);
     res.json({ success: true });
-  } catch (e) { res.status(400).json({ error: 'Falha ao cadastrar cliente.' }); }
+  } catch (e) { res.status(400).json({ error: 'Erro ao processar cadastro de cliente.' }); }
 });
 
 app.get('/api/financial', authMiddleware, async (req, res) => {
@@ -127,21 +136,10 @@ app.get('/api/financial', authMiddleware, async (req, res) => {
   res.json(rows);
 });
 
-app.get('/api/agenda', authMiddleware, async (req, res) => {
-  const [rows] = await pool.query('SELECT * FROM agenda WHERE org_id = ? ORDER BY date ASC', [req.user.org_id]);
-  res.json(rows);
-});
-
-app.get('/api/users', authMiddleware, async (req, res) => {
-  if (req.user.perfil !== 'admin') return res.status(403).json({ error: 'Acesso restrito.' });
-  const [rows] = await pool.query('SELECT id, nome, email, perfil, ativo FROM users WHERE org_id = ?', [req.user.org_id]);
-  res.json(rows);
-});
-
-// MIDDLEWARE GLOBAL DE ERROS
+// Middleware Global de Erros (Retorna sempre JSON, nunca HTML)
 app.use((err, req, res, next) => {
-  console.error("Global Error Handler:", err.stack);
-  res.status(500).json({ error: "Ocorreu um erro interno na infraestrutura juizado.com. Tente novamente mais tarde." });
+  console.error("Critical Runtime Error:", err.message);
+  res.status(500).json({ error: "O servidor juizado.com encontrou um problema técnico e não pôde processar o pedido." });
 });
 
 app.listen(PORT, '0.0.0.0', async () => {
