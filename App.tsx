@@ -22,27 +22,29 @@ const App: React.FC = () => {
   const [clients, setClients] = useState<any[]>([]);
 
   useEffect(() => {
-    document.documentElement.classList.add('dark');
-    
     const savedUser = localStorage.getItem('lexflow_session');
     if (savedUser) {
       const u = JSON.parse(savedUser);
       setUser(u);
       setCurrentView('crm');
     }
-
-    loadInitialData();
   }, []);
+
+  useEffect(() => {
+    if (user) loadInitialData();
+  }, [user]);
 
   const loadInitialData = async () => {
     try {
-      const res = await fetch('http://localhost:3001/api/clients');
+      const res = await fetch('http://localhost:3001/api/clients', {
+        headers: { 'x-user-id': user?.id || '' }
+      });
       if (res.ok) {
         const data = await res.json();
         setClients(data);
       }
     } catch (e) {
-      console.error("Erro ao carregar clientes do MySQL");
+      console.error("Erro ao carregar dados");
     }
   };
 
@@ -78,6 +80,8 @@ const App: React.FC = () => {
   if (currentView === 'login') return <Login onLogin={handleLogin} onBack={() => setCurrentView('landing')} />;
   if (currentView === 'members') return <MembersArea onBack={() => setCurrentView('landing')} onGoToCRM={() => setCurrentView('login')} />;
 
+  const isDemoMode = user?.email === 'demo@crm.com';
+
   return (
     <div className="flex h-screen w-full bg-slate-950 overflow-hidden font-sans text-white">
       <aside className="w-72 h-full backdrop-blur-3xl border-r border-white/10 flex flex-col z-30 bg-slate-900/70">
@@ -104,26 +108,30 @@ const App: React.FC = () => {
           <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-[10px] font-black uppercase text-slate-400 hover:text-rose-500 transition-colors">
             <i className="fas fa-sign-out-alt mr-2"></i> Encerrar Sessão
           </button>
-          <div className="w-full flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/5">
-            <span className="text-[10px] font-black uppercase text-slate-500">Acesso Seguro</span>
-            <i className="fas fa-shield-halved text-blue-400"></i>
-          </div>
         </div>
       </aside>
 
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         <header className="h-20 w-full backdrop-blur-xl border-b border-white/10 flex items-center justify-between px-10 bg-slate-900/40 z-20">
-          <div className="flex items-center gap-3">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Workspace</span>
-            <i className="fas fa-chevron-right text-[8px] text-slate-300"></i>
-            <span className="text-sm font-black text-white tracking-tight">{menuItems.find(i => i.id === activeTab)?.label}</span>
+          <div className="flex items-center gap-4">
+             <div className="flex items-center gap-3">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Workspace</span>
+              <i className="fas fa-chevron-right text-[8px] text-slate-300"></i>
+              <span className="text-sm font-black text-white tracking-tight">{menuItems.find(i => i.id === activeTab)?.label}</span>
+            </div>
+            {isDemoMode && (
+              <div className="px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></div>
+                <span className="text-[9px] font-black text-amber-500 uppercase tracking-widest">Modo Demonstração</span>
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-4">
             <div className="text-right hidden md:block">
               <p className="text-xs font-black text-white">{user?.name}</p>
-              <p className="text-[9px] font-bold text-blue-500 uppercase tracking-widest">PERFIL: {user?.role}</p>
+              <p className="text-[9px] font-bold text-blue-500 uppercase tracking-widest">{isDemoMode ? 'TESTE TEMPORÁRIO' : `PERFIL: ${user?.role}`}</p>
             </div>
-            <img src={user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=2563eb&color=fff`} className="w-10 h-10 rounded-xl border border-white/20" alt="Avatar" />
+            <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=2563eb&color=fff`} className="w-10 h-10 rounded-xl border border-white/20" alt="Avatar" />
           </div>
         </header>
 
@@ -136,7 +144,7 @@ const App: React.FC = () => {
             {activeTab === 'agenda' && <Agenda events={[]} setEvents={() => {}} />}
             {activeTab === 'documents' && <DocumentTemplates />}
             {activeTab === 'library' && <LegalLibrary />}
-            {activeTab === 'kanban' && <KanbanPipeline onConversion={() => {}} />}
+            {activeTab === 'kanban' && <KanbanPipeline />}
             {activeTab === 'planning' && <StrategicPlanning />}
             {activeTab === 'lawyers' && <LawyerManager />}
             {activeTab === 'ai' && <div className="max-w-3xl mx-auto"><AIAssistant /></div>}

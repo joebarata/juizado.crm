@@ -8,43 +8,40 @@ export interface User {
   active: boolean;
   oab?: string;
   specialty?: string;
-  createdAt: string;
+  createdAt?: string;
 }
 
-export const authService = {
-  init: async () => {
-    // A inicialização agora ocorre no servidor server.js
-    console.log("LexFlow 360: Conectado ao Backend MySQL");
-  },
+const getHeaders = () => {
+  const session = localStorage.getItem('lexflow_session');
+  const user = session ? JSON.parse(session) : null;
+  return {
+    'Content-Type': 'application/json',
+    'x-user-id': user ? user.id : ''
+  };
+};
 
+export const authService = {
   getUsers: async (): Promise<User[]> => {
-    const res = await fetch(`${API_URL}/users`);
+    const res = await fetch(`${API_URL}/users`, { headers: getHeaders() });
     return res.json();
   },
 
   createUser: async (userData: any) => {
     const res = await fetch(`${API_URL}/users`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getHeaders(),
       body: JSON.stringify(userData)
     });
-    if (!res.ok) throw new Error('Falha ao criar usuário.');
     return res.json();
   },
 
   authenticate: async (email: string, pass: string) => {
-    try {
-      const res = await fetch(`${API_URL}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password: pass })
-      });
-      
-      if (!res.ok) return null;
-      return res.json();
-    } catch (e) {
-      console.error("Erro de conexão com API:", e);
-      return null;
-    }
+    const res = await fetch(`${API_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: pass })
+    });
+    if (!res.ok) return null;
+    return res.json();
   }
 };
