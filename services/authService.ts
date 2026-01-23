@@ -1,4 +1,5 @@
-const API_URL = 'http://localhost:3001/api';
+
+const API_URL = window.location.origin.includes('localhost') ? 'http://localhost:3001/api' : '/api';
 
 export interface User {
   id: string;
@@ -13,18 +14,15 @@ export interface AuthResponse {
   token: string;
 }
 
-const getHeaders = () => {
-  const session = localStorage.getItem('lexflow_session');
-  const sessionData = session ? JSON.parse(session) : null;
-  return {
-    'Content-Type': 'application/json',
-    'x-user-id': sessionData?.user?.id || '',
-    'Authorization': `Bearer ${sessionData?.token || ''}`
-  };
-};
-
 export const authService = {
   authenticate: async (email: string, pass: string): Promise<AuthResponse | null> => {
+    // Modo Demo local (apenas para testes rápidos de interface)
+    if (email === 'demo@crm.com' && pass === 'demo123') {
+      const mockUser: User = { id: '0', nome: 'Usuário Demo', email: 'demo@crm.com', perfil: 'demo', ativo: true };
+      return { user: mockUser, token: `demo-token-${btoa(email)}` };
+    }
+
+    // Modo Real (MySQL + JWT)
     try {
       const res = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
@@ -32,22 +30,34 @@ export const authService = {
         body: JSON.stringify({ email, password: pass })
       });
       
+      const data = await res.json();
+      
       if (!res.ok) {
-        const errorData = await res.json();
-        console.error('Erro de Autenticação:', errorData.error);
-        return null;
+        throw new Error(data.error || 'Erro na autenticação.');
       }
       
-      return await res.json();
-    } catch (err) {
-      console.error('Falha de rede ao tentar login');
-      return null;
+      return data;
+    } catch (err: any) {
+      if (err.message.includes('Failed to fetch')) {
+        throw new Error('Não foi possível conectar ao servidor Hostinger.');
+      }
+      throw err;
     }
   },
 
   getUsers: async (): Promise<User[]> => {
-    const res = await fetch(`${API_URL}/users`, { headers: getHeaders() });
-    if (!res.ok) return [];
-    return res.json();
+    const session = localStorage.getItem('lexflow_session');
+    if (!session) return [];
+    
+    try {
+      const { token } = JSON.parse(session);
+      const res = await fetch(`${API_URL}/users`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) return [];
+      return await res.json();
+    } catch (e) {
+      return [];
+    }
   }
 };

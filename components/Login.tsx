@@ -28,14 +28,14 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onBack }) => {
     setError('');
 
     try {
-      const user = await authService.authenticate(email, password);
-      if (user) {
-        onLogin(user);
+      const response = await authService.authenticate(email, password);
+      if (response) {
+        onLogin(response);
       } else {
-        setError('Acesso negado. Credenciais inválidas.');
+        setError('Acesso negado. Verifique seus dados.');
       }
-    } catch (err) {
-      setError('Falha na comunicação com o servidor.');
+    } catch (err: any) {
+      setError(err.message || 'Erro inesperado na autenticação.');
     } finally {
       setIsLoading(false);
     }
@@ -58,24 +58,29 @@ export const Login: React.FC<LoginProps> = ({ onLogin, onBack }) => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <input required type="email" placeholder="E-mail" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-4 bg-black/20 border border-white/5 rounded-xl text-white outline-none focus:ring-2 focus:ring-blue-500/50" />
-            <input required type="password" placeholder="Senha" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-4 bg-black/20 border border-white/5 rounded-xl text-white outline-none focus:ring-2 focus:ring-blue-500/50" />
+            <input required type="email" placeholder="E-mail" value={email} onChange={e => setEmail(e.target.value)} className="w-full p-4 bg-black/20 border border-white/5 rounded-xl text-white outline-none focus:ring-2 focus:ring-blue-500/50 transition-all" />
+            <input required type="password" placeholder="Senha" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-4 bg-black/20 border border-white/5 rounded-xl text-white outline-none focus:ring-2 focus:ring-blue-500/50 transition-all" />
             
-            {error && <div className="text-rose-500 text-[10px] font-black uppercase text-center">{error}</div>}
+            {error && (
+              <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 text-[10px] font-black uppercase text-center animate-shake">
+                <i className="fas fa-exclamation-triangle mr-2"></i>
+                {error}
+              </div>
+            )}
 
-            <button type="submit" disabled={isLoading} className="dynamic-btn w-full py-4 rounded-xl text-xs uppercase tracking-widest">
+            <button type="submit" disabled={isLoading} className="dynamic-btn w-full py-4 rounded-xl text-xs uppercase tracking-widest disabled:opacity-50">
               {isLoading ? 'Autenticando...' : 'Entrar no Sistema'}
             </button>
           </form>
 
           <div className="mt-8 pt-8 border-t border-white/5 grid grid-cols-2 gap-4">
-            <button onClick={handleDemoAccess} className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-500 hover:bg-amber-500 hover:text-white transition-all">
+            <button onClick={handleDemoAccess} className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-500 hover:bg-amber-500 hover:text-white transition-all group">
               <p className="text-[10px] font-black uppercase tracking-widest">Modo Demo</p>
-              <p className="text-[8px] font-bold opacity-70">Teste Sem Salvar</p>
+              <p className="text-[8px] font-bold opacity-70 group-hover:opacity-100">Sem Dependências</p>
             </button>
-            <button onClick={handleAdminAccess} className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-500 hover:bg-blue-500 hover:text-white transition-all">
+            <button onClick={handleAdminAccess} className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-500 hover:bg-blue-500 hover:text-white transition-all group">
               <p className="text-[10px] font-black uppercase tracking-widest">Modo Real</p>
-              <p className="text-[8px] font-bold opacity-70">Gravar no Banco</p>
+              <p className="text-[8px] font-bold opacity-70 group-hover:opacity-100">Banco Hostinger</p>
             </button>
           </div>
         </div>

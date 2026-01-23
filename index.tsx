@@ -10,5 +10,4 @@ if (container) {
       <App />
     </React.StrictMode>
   );
-  console.log("LexFlow 360 v8.2: Production Build Active");
 }
