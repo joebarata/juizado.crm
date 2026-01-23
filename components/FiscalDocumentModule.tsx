@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 
 const API_URL = window.location.origin.includes('localhost') ? 'http://localhost:3001/api' : '/api';
@@ -21,7 +22,7 @@ export const FiscalDocumentModule: React.FC = () => {
     setStatusMessage('Enviando solicitação para a Receita...');
 
     try {
-      const session = localStorage.getItem('lexflow_session');
+      const session = localStorage.getItem('juizado_session');
       const token = session ? JSON.parse(session).token : '';
 
       const res = await fetch(`${API_URL}/fiscal/add`, {
@@ -53,7 +54,7 @@ export const FiscalDocumentModule: React.FC = () => {
   const fetchPdf = async (key: string) => {
     setStatusMessage('Gerando PDF (Base64)...');
     try {
-      const session = localStorage.getItem('lexflow_session');
+      const session = localStorage.getItem('juizado_session');
       const token = session ? JSON.parse(session).token : '';
 
       const res = await fetch(`${API_URL}/fiscal/pdf/${key}`, {

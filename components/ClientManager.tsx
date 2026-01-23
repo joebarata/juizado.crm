@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 
 const API_URL = window.location.origin.includes('localhost') ? 'http://localhost:3001/api' : '/api';
@@ -21,7 +22,7 @@ export const ClientManager: React.FC<{ clients: Client[], onAdd: () => void }> =
     e.preventDefault();
     setIsLoading(true);
     try {
-      const session = localStorage.getItem('lexflow_session');
+      const session = localStorage.getItem('juizado_session');
       const token = session ? JSON.parse(session).token : '';
 
       const res = await fetch(`${API_URL}/clients`, {
@@ -50,8 +51,8 @@ export const ClientManager: React.FC<{ clients: Client[], onAdd: () => void }> =
     <div className="space-y-8 animate-fade-up">
       <header className="flex flex-col md:flex-row justify-between items-center gap-4">
         <div>
-          <h1 className="text-4xl font-extrabold tracking-tighter dark:text-white">Carteira de Clientes</h1>
-          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Gestão centralizada de ativos jurídicos.</p>
+          <h1 className="text-4xl font-extrabold tracking-tighter text-white">Carteira de Clientes</h1>
+          <p className="text-sm font-medium text-slate-400">Gestão centralizada de ativos jurídicos.</p>
         </div>
         <button onClick={() => setShowModal(true)} className="dynamic-btn px-8 py-3.5 rounded-xl text-xs uppercase tracking-widest">
           <i className="fas fa-plus mr-2"></i> Novo Cliente
@@ -69,13 +70,13 @@ export const ClientManager: React.FC<{ clients: Client[], onAdd: () => void }> =
                   <i className={`fas ${cli.type === 'PF' ? 'fa-user' : 'fa-building'}`}></i>
                 </div>
                 <div>
-                  <h3 className="text-sm font-black dark:text-white uppercase tracking-tight">{cli.name}</h3>
+                  <h3 className="text-sm font-black text-white uppercase tracking-tight">{cli.name}</h3>
                   <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase">{cli.doc} • {cli.city}</p>
                 </div>
               </div>
               <div className="text-right">
                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">E-mail</p>
-                <p className="text-xs font-black dark:text-white">{cli.email}</p>
+                <p className="text-xs font-black text-white">{cli.email}</p>
               </div>
             </div>
           ))

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 
 const API_URL = window.location.origin.includes('localhost') ? 'http://localhost:3001/api' : '/api';
@@ -90,7 +91,7 @@ export const Agenda: React.FC<{ events: EventRecord[], onAdd: () => void }> = ({
     e.preventDefault();
     setIsLoading(true);
     try {
-      const session = localStorage.getItem('lexflow_session');
+      const session = localStorage.getItem('juizado_session');
       const token = session ? JSON.parse(session).token : '';
       
       const res = await fetch(`${API_URL}/agenda`, {
@@ -118,7 +119,7 @@ export const Agenda: React.FC<{ events: EventRecord[], onAdd: () => void }> = ({
     <div className="space-y-8 animate-in fade-in duration-500">
       <header className="flex justify-between items-center px-2">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Agenda Jurídica</h1>
+          <h1 className="text-3xl font-extrabold text-white tracking-tight">Agenda Jurídica</h1>
           <p className="text-slate-500 text-sm font-medium mt-1">Gestão centralizada de prazos e eventos.</p>
         </div>
         <button onClick={() => setIsModalOpen(true)} className="dynamic-btn px-6 py-3 text-sm flex items-center gap-2">

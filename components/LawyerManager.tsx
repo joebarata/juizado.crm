@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 
 const API_URL = window.location.origin.includes('localhost') ? 'http://localhost:3001/api' : '/api';
@@ -22,7 +23,7 @@ export const LawyerManager: React.FC<{ users: any[], onUpdate: () => void }> = (
     setError('');
 
     try {
-      const session = localStorage.getItem('lexflow_session');
+      const session = localStorage.getItem('juizado_session');
       const token = session ? JSON.parse(session).token : '';
 
       const res = await fetch(`${API_URL}/users`, {

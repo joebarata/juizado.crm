@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 
 const API_URL = window.location.origin.includes('localhost') ? 'http://localhost:3001/api' : '/api';
@@ -24,7 +25,7 @@ export const FinancialManager: React.FC<{ transactions: any[], onAdd: () => void
     e.preventDefault();
     setIsLoading(true);
     try {
-      const session = localStorage.getItem('lexflow_session');
+      const session = localStorage.getItem('juizado_session');
       const token = session ? JSON.parse(session).token : '';
       
       const res = await fetch(`${API_URL}/financial`, {

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 
 interface CPFData {
@@ -48,7 +49,7 @@ export const CPFConsultation: React.FC = () => {
     setData(null);
 
     try {
-      const session = localStorage.getItem('lexflow_session');
+      const session = localStorage.getItem('juizado_session');
       const token = session ? JSON.parse(session).token : '';
       
       const API_URL = window.location.origin.includes('localhost') ? 'http://localhost:3001/api' : '/api';
@@ -138,7 +139,6 @@ export const CPFConsultation: React.FC = () => {
 
       {data && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
-          {/* Ficha de Identidade */}
           <div className="lg:col-span-8 space-y-8">
             <div className="soft-glass p-8 space-y-8">
               <div className="flex justify-between items-start border-b border-white/5 pb-8">
@@ -181,7 +181,6 @@ export const CPFConsultation: React.FC = () => {
               </div>
             </div>
 
-            {/* Endereço */}
             <div className="soft-glass p-8 relative overflow-hidden">
               <div className="absolute right-0 top-0 p-8 opacity-10">
                 <i className="fas fa-map-location-dot text-6xl text-white"></i>
@@ -204,11 +203,10 @@ export const CPFConsultation: React.FC = () => {
             </div>
           </div>
 
-          {/* Sidebar de Resumo / Ações */}
           <div className="lg:col-span-4 space-y-8">
             <div className="soft-glass p-8 bg-gradient-to-br from-blue-600/10 to-transparent border-blue-500/20">
-              <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-8 text-center">ANÁLISE DE RISCO</h3>
-              <div className="flex flex-col items-center gap-6">
+               <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-8 text-center">ANÁLISE DE RISCO</h3>
+               <div className="flex flex-col items-center gap-6">
                 <div className={`w-32 h-32 rounded-full border-8 flex items-center justify-center ${data.SituacaoCadastral === '0' ? 'border-emerald-500/20' : 'border-rose-500/20'}`}>
                    <div className={`text-3xl font-black ${data.SituacaoCadastral === '0' ? 'text-emerald-500' : 'text-rose-500'}`}>
                      {data.SituacaoCadastral === '0' ? '9.8' : '3.2'}
