@@ -15,22 +15,10 @@ const processStats = [
   { status: 'Urgentes', qtd: 12, color: '#ef4444' },
 ];
 
-const CustomTooltip = ({ active, payload }: any) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-slate-900/90 backdrop-blur-xl border border-white/10 p-4 rounded-2xl shadow-2xl">
-        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">{payload[0].name}</p>
-        <p className="text-xl font-black text-white">{payload[0].value} <span className="text-xs font-medium text-slate-500">processos</span></p>
-      </div>
-    );
-  }
-  return null;
-};
-
 const QuickAction = ({ icon, label, onClick }: { icon: string, label: string, onClick?: () => void }) => (
   <button 
     onClick={onClick}
-    className="flex flex-col items-center justify-center gap-3 p-6 rounded-3xl bg-white/5 border border-white/5 hover:border-blue-500/30 hover:bg-blue-500/5 transition-all group"
+    className="flex flex-col items-center justify-center gap-3 p-6 rounded-3xl soft-glass border border-transparent hover:border-blue-500/30 hover:bg-blue-500/5 transition-all group"
   >
     <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-white/5 flex items-center justify-center text-slate-500 group-hover:text-blue-500 group-hover:scale-110 transition-all">
       <i className={`fas ${icon} text-lg`}></i>
@@ -41,37 +29,28 @@ const QuickAction = ({ icon, label, onClick }: { icon: string, label: string, on
   </button>
 );
 
-const MetricCard = ({ title, value, icon, color, trend, onClick, subtitle }: any) => (
+const MetricCard = ({ title, value, icon, color, trend, onClick }: any) => (
   <div 
     onClick={onClick}
-    className={`soft-glass p-8 rounded-[32px] border border-white/5 relative group overflow-hidden cursor-pointer hover:border-blue-500/30 hover:shadow-[0_20px_50px_rgba(37,99,235,0.1)] transition-all duration-500 hover:-translate-y-1`}
+    className={`soft-glass p-8 rounded-[32px] border-l-4 ${color} relative group overflow-hidden cursor-pointer hover:scale-[1.02] transition-transform`}
   >
     <div className="relative z-10 flex justify-between items-start">
-      <div className="flex-1">
-        <div className="flex items-center gap-2 mb-2">
-           <div className={`w-1.5 h-1.5 rounded-full ${color.replace('border-', 'bg-')}`}></div>
-           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{title}</p>
-        </div>
-        <h2 className="text-4xl font-black dark:text-white tracking-tighter group-hover:text-blue-500 transition-colors">{value}</h2>
+      <div>
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{title}</p>
+        <h2 className="text-4xl font-black dark:text-white tracking-tighter">{value}</h2>
         <div className="mt-4 flex items-center gap-2">
           <span className="text-[10px] font-black px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-500">
             {trend}
           </span>
-          <span className="text-[9px] font-bold text-slate-400 uppercase">{subtitle || 'vs. mês anterior'}</span>
+          <span className="text-[9px] font-bold text-slate-400 uppercase">vs. mês anterior</span>
         </div>
       </div>
-      <div className={`w-14 h-14 rounded-2xl bg-slate-100 dark:bg-white/5 flex items-center justify-center text-2xl opacity-40 group-hover:opacity-100 group-hover:bg-blue-500 group-hover:text-white transition-all duration-500`}>
-        <i className={`fas ${icon}`}></i>
+      <div className={`w-14 h-14 rounded-2xl bg-slate-100 dark:bg-white/5 flex items-center justify-center text-2xl opacity-50 group-hover:opacity-100 transition-opacity`}>
+        <i className={`fas ${icon} ${color.replace('border-', 'text-')}`}></i>
       </div>
     </div>
-    
-    {/* Action Indicator */}
-    <div className="absolute right-8 bottom-6 opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all duration-500">
-       <i className="fas fa-arrow-right text-blue-500 text-xs"></i>
-    </div>
-
-    {/* Background Decorative Gradient */}
-    <div className={`absolute -right-10 -bottom-10 w-32 h-32 rounded-full opacity-0 group-hover:opacity-10 blur-3xl transition-opacity duration-700 ${color.replace('border-', 'bg-')}`}></div>
+    {/* Decorativo de fundo */}
+    <div className={`absolute -right-4 -bottom-4 w-24 h-24 rounded-full opacity-5 blur-2xl ${color.replace('border-', 'bg-')}`}></div>
   </div>
 );
 
@@ -86,176 +65,111 @@ export const Dashboard: React.FC<DashboardProps> = ({ setActiveTab }) => {
         <div className="flex gap-3">
           <div className="px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-3">
             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-            <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Sistema Operacional Online</span>
+            <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Sistema Operacional</span>
           </div>
         </div>
       </header>
 
-      {/* Grid de Métricas - Agora Totalmente Clicáveis e Intuitivas */}
+      {/* Grid de Métricas Principais - Conectadas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <MetricCard 
-          title="Total Clientes" 
-          value="1.248" 
-          icon="fa-users" 
-          color="border-blue-500" 
-          trend="+12%" 
-          onClick={() => setActiveTab('clients')}
-        />
-        <MetricCard 
-          title="Saúde do Acervo" 
-          value="314" 
-          icon="fa-gavel" 
-          color="border-emerald-500" 
-          trend="+5.4%" 
-          subtitle="Processos Ativos"
-          onClick={() => setActiveTab('planning')}
-        />
-        <MetricCard 
-          title="Pipeline Comercial" 
-          value="42" 
-          icon="fa-funnel-dollar" 
-          color="border-amber-500" 
-          trend="+8" 
-          subtitle="Leads Ativos"
-          onClick={() => setActiveTab('kanban')}
-        />
-        <MetricCard 
-          title="Agenda do Dia" 
-          value="08" 
-          icon="fa-calendar-check" 
-          color="border-rose-500" 
-          trend="0 Pendente" 
-          subtitle="Compromissos"
-          onClick={() => setActiveTab('agenda')}
-        />
+        <MetricCard title="Total Clientes" value="1.248" icon="fa-users" color="border-blue-500" trend="+12%" onClick={() => setActiveTab('clients')} />
+        <MetricCard title="Processos Ativos" value="314" icon="fa-gavel" color="border-emerald-500" trend="+5.4%" onClick={() => setActiveTab('planning')} />
+        <MetricCard title="Leads (Kanban)" value="42" icon="fa-funnel-dollar" color="border-amber-500" trend="+8" onClick={() => setActiveTab('kanban')} />
+        <MetricCard title="Agenda Hoje" value="08" icon="fa-calendar-check" color="border-rose-500" trend="0 pendente" onClick={() => setActiveTab('agenda')} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Panorama Processual - Com Recharts Otimizado */}
-        <div className="lg:col-span-8 soft-glass p-10 flex flex-col hover:border-blue-500/20 transition-all cursor-default group">
-          <div className="flex justify-between items-start mb-10">
+        {/* Panorama Processual */}
+        <div className="lg:col-span-8 soft-glass p-10 flex flex-col cursor-pointer" onClick={() => setActiveTab('planning')}>
+          <div className="flex justify-between items-center mb-10">
             <div>
-              <h3 className="text-sm font-black uppercase tracking-widest text-slate-400">Panorama do Acervo</h3>
+              <h3 className="text-sm font-black uppercase tracking-widest text-slate-400">Panorama Processual</h3>
               <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">Distribuição por Status Real-Time</p>
             </div>
-            <button 
-              onClick={() => setActiveTab('planning')}
-              className="text-[9px] font-black uppercase tracking-[0.2em] text-blue-500 hover:text-white transition-colors"
-            >
-              Ver BI Completo <i className="fas fa-chevron-right ml-1"></i>
-            </button>
           </div>
           
-          <div className="flex-1 min-h-[350px] flex items-center justify-center relative">
+          <div className="flex-1 min-h-[300px] flex items-center">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={processStats}
                   cx="50%"
                   cy="50%"
-                  innerRadius={100}
-                  outerRadius={140}
-                  paddingAngle={10}
+                  innerRadius={80}
+                  outerRadius={120}
+                  paddingAngle={8}
                   dataKey="qtd"
                   stroke="none"
-                  animationBegin={0}
-                  animationDuration={1500}
                 >
                   {processStats.map((entry, index) => (
-                    <Cell 
-                      key={`cell-${index}`} 
-                      fill={entry.color} 
-                      className="hover:opacity-80 transition-opacity cursor-pointer outline-none"
-                    />
+                    <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip content={<CustomTooltip />} />
-                <Legend 
-                  verticalAlign="bottom" 
-                  height={36} 
-                  content={({ payload }: any) => (
-                    <div className="flex justify-center gap-6 mt-8">
-                      {payload.map((entry: any, index: number) => (
-                        <div key={`legend-${index}`} className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }}></div>
-                          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{entry.value}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                <Tooltip 
+                  contentStyle={{borderRadius: '16px', border: 'none', background: '#0f172a', color: '#fff', fontSize: '11px', fontWeight: 'bold'}}
+                  itemStyle={{color: '#fff'}}
                 />
               </PieChart>
             </ResponsiveContainer>
-            
-            {/* Center Content for Pie Chart */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none pb-8">
-              <span className="text-4xl font-black text-white leading-none">267</span>
-              <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1">Total Geral</span>
-            </div>
           </div>
         </div>
 
-        {/* Ações Rápidas & AI Intelligence */}
+        {/* Ações Rápidas - Conectadas */}
         <div className="lg:col-span-4 space-y-8">
           <div className="soft-glass p-8">
-            <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 mb-8 text-center">Gestão Rápida</h3>
+            <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 mb-8 text-center">Acesso Rápido</h3>
             <div className="grid grid-cols-2 gap-4">
               <QuickAction icon="fa-user-plus" label="Novo Cliente" onClick={() => setActiveTab('clients')} />
-              <QuickAction icon="fa-bolt-lightning" label="Varredura PJE" onClick={() => setActiveTab('intelligence')} />
+              <QuickAction icon="fa-bolt-lightning" label="Push Intimações" onClick={() => setActiveTab('intelligence')} />
               <QuickAction icon="fa-columns" label="Kanban" onClick={() => setActiveTab('kanban')} />
               <QuickAction icon="fa-calendar-alt" label="Agenda" onClick={() => setActiveTab('agenda')} />
             </div>
           </div>
 
-          <div 
-            className="soft-glass p-8 bg-gradient-to-br from-blue-600 to-indigo-700 shadow-xl shadow-blue-600/20 border-none cursor-pointer group hover:scale-[1.03] transition-all duration-500" 
-            onClick={() => setActiveTab('ai')}
-          >
+          <div className="soft-glass p-8 bg-blue-600 shadow-xl shadow-blue-600/20 border-none cursor-pointer" onClick={() => setActiveTab('ai')}>
             <div className="flex items-center gap-4 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-white backdrop-blur-md">
-                <i className="fas fa-wand-magic-sparkles group-hover:rotate-12 transition-transform"></i>
+              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-white">
+                <i className="fas fa-wand-magic-sparkles"></i>
               </div>
-              <h4 className="text-sm font-black text-white uppercase tracking-widest">Inteligência LexFlow</h4>
+              <h4 className="text-sm font-black text-white uppercase tracking-widest">IA LexFlow</h4>
             </div>
             <p className="text-xs font-bold text-blue-100 leading-relaxed mb-6">
-              Otimize andamentos jurídicos e triagem de documentos com o motor Gemini 3 Pro.
+              Simplifique andamentos e gere relatórios automáticos com inteligência artificial.
             </p>
-            <button className="w-full py-3 bg-white rounded-xl text-blue-600 text-[10px] font-black uppercase tracking-widest group-hover:bg-blue-50 transition-all flex items-center justify-center gap-2">
-              Iniciar Assistente <i className="fas fa-chevron-right text-[8px]"></i>
+            <button className="w-full py-3 bg-white rounded-xl text-blue-600 text-[10px] font-black uppercase tracking-widest hover:bg-blue-50 transition-all">
+              Acessar Assistente
             </button>
           </div>
         </div>
       </div>
 
-      {/* Atividades Recentes com Link Direto */}
-      <div className="soft-glass p-8 border-white/5">
+      {/* Feed de Atividades Recentes - Conectadas */}
+      <div className="soft-glass p-8">
         <div className="flex justify-between items-center mb-8">
-           <h3 className="text-sm font-black uppercase tracking-widest text-slate-400">Monitoramento Crítico</h3>
-           <span className="text-[10px] font-black text-blue-500 cursor-pointer hover:underline" onClick={() => setActiveTab('library')}>Histórico Completo</span>
+           <h3 className="text-sm font-black uppercase tracking-widest text-slate-400">Atividades Críticas da Banca</h3>
+           <span className="text-[10px] font-black text-blue-500 cursor-pointer hover:underline" onClick={() => setActiveTab('library')}>Ver Acervo</span>
         </div>
-        <div className="space-y-4">
+        <div className="space-y-6">
           {[
-            { user: 'Dr. Ricardo', action: 'protocolou petição em', target: 'Proc. 500123-22', time: '12 min atrás', icon: 'fa-file-signature', color: 'text-blue-500', tab: 'documents' },
-            { user: 'LexFlow AI', action: 'detectou novo prazo em', target: 'Agravo de Instrumento #88', time: '45 min atrás', icon: 'fa-robot', color: 'text-purple-500', tab: 'intelligence' },
-            { user: 'Financeiro', action: 'liquidou honorários de', target: 'Sucumbência Banco Alfa', time: '2 horas atrás', icon: 'fa-check-circle', color: 'text-emerald-500', tab: 'financial' },
+            { user: 'Dr. Ricardo', action: 'peticionou em', target: 'Proc. 500123-22', time: '12 min atrás', icon: 'fa-file-signature', color: 'text-blue-500', tab: 'documents' },
+            { user: 'Sistema IA', action: 'identificou prazo para', target: 'Contestação Alfa S/A', time: '45 min atrás', icon: 'fa-robot', color: 'text-purple-500', tab: 'intelligence' },
+            { user: 'Financeiro', action: 'confirmou pagamento de', target: 'Honorários Sucumbenciais', time: '2 horas atrás', icon: 'fa-check-circle', color: 'text-emerald-500', tab: 'financial' },
           ].map((item, i) => (
             <div 
               key={i} 
               onClick={() => setActiveTab(item.tab as any)}
-              className="flex items-center gap-6 p-4 rounded-2xl hover:bg-white/5 border border-transparent hover:border-white/10 transition-all cursor-pointer group"
+              className="flex items-center gap-6 p-4 rounded-2xl hover:bg-slate-50 dark:hover:bg-white/5 transition-all cursor-pointer group"
             >
               <div className={`w-10 h-10 rounded-xl bg-slate-100 dark:bg-white/5 flex items-center justify-center ${item.color} group-hover:scale-110 transition-transform`}>
                 <i className={`fas ${item.icon}`}></i>
               </div>
               <div className="flex-1">
                 <p className="text-xs font-bold dark:text-white">
-                  <span className="text-blue-500 font-black">{item.user}</span> {item.action} <span className="underline decoration-blue-500/20 font-black">{item.target}</span>
+                  <span className="text-blue-500">{item.user}</span> {item.action} <span className="underline decoration-blue-500/30">{item.target}</span>
                 </p>
-                <p className="text-[10px] text-slate-500 font-bold uppercase mt-1 tracking-widest">{item.time}</p>
+                <p className="text-[10px] text-slate-400 font-bold uppercase mt-1 tracking-tighter">{item.time}</p>
               </div>
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                 <i className="fas fa-arrow-right text-[10px] text-blue-500"></i>
-              </div>
+              <i className="fas fa-chevron-right text-[10px] text-slate-300"></i>
             </div>
           ))}
         </div>
