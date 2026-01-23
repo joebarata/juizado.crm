@@ -16,7 +16,7 @@ export interface AuthResponse {
 
 export const authService = {
   authenticate: async (email: string, pass: string): Promise<AuthResponse | null> => {
-    // Modo Demo local (apenas para testes rápidos de interface)
+    // Modo Demo local
     if (email === 'demo@crm.com' && pass === 'demo123') {
       const mockUser: User = { id: '0', nome: 'Usuário Demo', email: 'demo@crm.com', perfil: 'demo', ativo: true };
       return { user: mockUser, token: `demo-token-${btoa(email)}` };
@@ -33,13 +33,13 @@ export const authService = {
       const data = await res.json();
       
       if (!res.ok) {
-        throw new Error(data.error || 'Erro na autenticação.');
+        throw new Error(data.error || 'Erro inesperado no servidor.');
       }
       
       return data;
     } catch (err: any) {
       if (err.message.includes('Failed to fetch')) {
-        throw new Error('Não foi possível conectar ao servidor Hostinger.');
+        throw new Error('Servidor offline. Verifique sua conexão ou se o Node.js está rodando na Hostinger.');
       }
       throw err;
     }
@@ -52,7 +52,10 @@ export const authService = {
     try {
       const { token } = JSON.parse(session);
       const res = await fetch(`${API_URL}/users`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
       if (!res.ok) return [];
       return await res.json();
