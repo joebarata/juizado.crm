@@ -19,23 +19,32 @@ const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<'landing' | 'login' | 'members' | 'crm'>('landing');
   const [activeTab, setActiveTab] = useState<'dashboard' | 'clients' | 'agenda' | 'lawyers' | 'financial' | 'ai' | 'kanban' | 'planning' | 'documents' | 'intelligence' | 'library'>('dashboard');
   const [user, setUser] = useState<any>(null);
+  const [clients, setClients] = useState<any[]>([]);
 
   useEffect(() => {
     document.documentElement.classList.add('dark');
     
-    // Inicializa o "Banco de Dados" e cria o Admin se não existir
-    authService.init();
-
     const savedUser = localStorage.getItem('lexflow_session');
     if (savedUser) {
-      setUser(JSON.parse(savedUser));
+      const u = JSON.parse(savedUser);
+      setUser(u);
       setCurrentView('crm');
     }
+
+    loadInitialData();
   }, []);
 
-  const [clients, setClients] = useState<any[]>([{ id: '1', name: 'João Silva Oliveira', type: 'PF', doc: '123.456.789-00', email: 'joao@email.com', city: 'São Paulo', cases: 3, history: [] }]);
-  const [events, setEvents] = useState<any[]>([{ id: '1', title: 'Audiência de Conciliação', description: 'Vara de Família', date: new Date().toISOString().split('T')[0], time: '14:00', type: 'audiencia' }]);
-  const [transactions, setTransactions] = useState<any[]>([{ id: '1', desc: 'Honorários de Sucumbência', val: 5400.50, type: 'receita', status: 'pago', date: '2024-06-12' }]);
+  const loadInitialData = async () => {
+    try {
+      const res = await fetch('http://localhost:3001/api/clients');
+      if (res.ok) {
+        const data = await res.json();
+        setClients(data);
+      }
+    } catch (e) {
+      console.error("Erro ao carregar clientes do MySQL");
+    }
+  };
 
   const handleLogin = (userData: any) => {
     localStorage.setItem('lexflow_session', JSON.stringify(userData));
@@ -63,7 +72,6 @@ const App: React.FC = () => {
     { id: 'ai', label: 'LexFlow AI', icon: 'fa-wand-magic-sparkles' },
   ];
 
-  // Filtra itens de menu baseado no cargo do usuário
   const filteredMenuItems = menuItems.filter(item => !item.adminOnly || user?.role === 'ADMIN');
 
   if (currentView === 'landing') return <LandingPage onGoToLogin={() => setCurrentView('login')} onGoToMembers={() => setCurrentView('members')} />;
@@ -122,10 +130,10 @@ const App: React.FC = () => {
         <main className="flex-1 overflow-y-auto p-10 custom-scrollbar bg-slate-950">
           <div className="max-w-7xl mx-auto pb-10">
             {activeTab === 'dashboard' && <Dashboard setActiveTab={setActiveTab} />}
-            {activeTab === 'intelligence' && <IntelligenceModule clients={clients} lawyers={authService.getUsers()} onDelegate={() => {}} />}
-            {activeTab === 'clients' && <ClientManager clients={clients} onAdd={(c) => setClients([...clients, c])} />}
-            {activeTab === 'financial' && <FinancialManager transactions={transactions} onAdd={(t) => setTransactions([t, ...transactions])} />}
-            {activeTab === 'agenda' && <Agenda events={events} setEvents={setEvents} />}
+            {activeTab === 'intelligence' && <IntelligenceModule clients={clients} lawyers={[]} onDelegate={() => {}} />}
+            {activeTab === 'clients' && <ClientManager clients={clients} onAdd={loadInitialData} />}
+            {activeTab === 'financial' && <FinancialManager transactions={[]} onAdd={() => {}} />}
+            {activeTab === 'agenda' && <Agenda events={[]} setEvents={() => {}} />}
             {activeTab === 'documents' && <DocumentTemplates />}
             {activeTab === 'library' && <LegalLibrary />}
             {activeTab === 'kanban' && <KanbanPipeline onConversion={() => {}} />}

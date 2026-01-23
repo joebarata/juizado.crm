@@ -1,12 +1,9 @@
-import bcrypt from 'bcryptjs';
-
-const DB_KEY = 'lexflow_db_users';
+const API_URL = 'http://localhost:3001/api';
 
 export interface User {
   id: string;
   name: string;
   email: string;
-  passwordHash: string;
   role: 'ADMIN' | 'LAWYER' | 'ASSISTANT' | 'FINANCIAL';
   active: boolean;
   oab?: string;
@@ -15,90 +12,39 @@ export interface User {
 }
 
 export const authService = {
-  // Inicializa o banco e cria o admin se necessário
   init: async () => {
-    const users = authService.getUsers();
-    const adminExists = users.some(u => u.role === 'ADMIN');
-
-    if (!adminExists) {
-      console.log("LexFlow Engine: Criando administrador mestre...");
-      const salt = bcrypt.genSaltSync(10);
-      const passwordHash = bcrypt.hashSync('admin123', salt);
-      
-      const masterAdmin: User = {
-        id: 'master-admin',
-        name: 'Administrador LexFlow',
-        email: 'admin@admin.com',
-        passwordHash,
-        role: 'ADMIN',
-        active: true,
-        oab: 'MASTER',
-        specialty: 'Gestão Total',
-        createdAt: new Date().toISOString()
-      };
-      
-      authService.saveUser(masterAdmin);
-      console.log("LexFlow Engine: Admin criado com sucesso. Use admin@admin.com / admin123");
-    }
+    // A inicialização agora ocorre no servidor server.js
+    console.log("LexFlow 360: Conectado ao Backend MySQL");
   },
 
-  getUsers: (): User[] => {
-    const data = localStorage.getItem(DB_KEY);
-    return data ? JSON.parse(data) : [];
+  getUsers: async (): Promise<User[]> => {
+    const res = await fetch(`${API_URL}/users`);
+    return res.json();
   },
 
-  saveUser: (user: User) => {
-    const users = authService.getUsers();
-    const index = users.findIndex(u => u.id === user.id);
-    if (index >= 0) {
-      users[index] = user;
-    } else {
-      users.push(user);
-    }
-    localStorage.setItem(DB_KEY, JSON.stringify(users));
-  },
-
-  deleteUser: (id: string) => {
-    const users = authService.getUsers().filter(u => u.id !== id);
-    localStorage.setItem(DB_KEY, JSON.stringify(users));
-  },
-
-  createUser: async (userData: Partial<User> & { password?: string }) => {
-    const users = authService.getUsers();
-    if (users.find(u => u.email === userData.email)) {
-      throw new Error('Este e-mail já está cadastrado no sistema.');
-    }
-
-    const salt = bcrypt.genSaltSync(10);
-    const passwordHash = bcrypt.hashSync(userData.password || '123456', salt);
-
-    const newUser: User = {
-      id: Math.random().toString(36).substr(2, 9),
-      name: userData.name || '',
-      email: userData.email || '',
-      passwordHash,
-      role: userData.role || 'LAWYER',
-      active: true,
-      oab: userData.oab,
-      specialty: userData.specialty,
-      createdAt: new Date().toISOString()
-    };
-
-    authService.saveUser(newUser);
-    return newUser;
+  createUser: async (userData: any) => {
+    const res = await fetch(`${API_URL}/users`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(userData)
+    });
+    if (!res.ok) throw new Error('Falha ao criar usuário.');
+    return res.json();
   },
 
   authenticate: async (email: string, pass: string) => {
-    const users = authService.getUsers();
-    const user = users.find(u => u.email === email && u.active);
-
-    if (!user) return null;
-
-    const isValid = bcrypt.compareSync(pass, user.passwordHash);
-    if (!isValid) return null;
-
-    // Retorna o usuário sem a senha por segurança
-    const { passwordHash, ...safeUser } = user;
-    return safeUser;
+    try {
+      const res = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password: pass })
+      });
+      
+      if (!res.ok) return null;
+      return res.json();
+    } catch (e) {
+      console.error("Erro de conexão com API:", e);
+      return null;
+    }
   }
 };

@@ -13,8 +13,9 @@ export const LawyerManager: React.FC = () => {
     loadUsers();
   }, []);
 
-  const loadUsers = () => {
-    setUsers(authService.getUsers());
+  const loadUsers = async () => {
+    const data = await authService.getUsers();
+    setUsers(data);
   };
 
   const getInitials = (name: string) => {
@@ -39,11 +40,7 @@ export const LawyerManager: React.FC = () => {
     setError('');
 
     try {
-      if (formData.id) {
-        authService.saveUser(formData as User);
-      } else {
-        await authService.createUser(formData);
-      }
+      await authService.createUser(formData);
       loadUsers();
       closeModal();
     } catch (err: any) {
@@ -68,14 +65,6 @@ export const LawyerManager: React.FC = () => {
     setError('');
   };
 
-  const deleteUser = (id: string) => {
-    if (id === 'master-admin') return alert('O administrador mestre não pode ser removido.');
-    if (confirm('Deseja realmente remover este membro da equipe? O acesso será revogado imediatamente.')) {
-      authService.deleteUser(id);
-      loadUsers();
-    }
-  };
-
   const filteredUsers = users.filter(u => 
     u.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     u.email.toLowerCase().includes(searchTerm.toLowerCase())
@@ -86,7 +75,7 @@ export const LawyerManager: React.FC = () => {
       <header className="flex flex-col md:flex-row justify-between items-center gap-6 px-2">
         <div>
           <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Gestão de Equipe</h1>
-          <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mt-1">Controle de acesso e cargos da banca jurídica.</p>
+          <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mt-1">Conectado ao Banco MySQL Oficial.</p>
         </div>
         
         <div className="flex items-center gap-4 w-full md:w-auto">
@@ -94,7 +83,7 @@ export const LawyerManager: React.FC = () => {
             <i className="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
             <input 
               type="text" 
-              placeholder="Buscar por nome ou e-mail..." 
+              placeholder="Buscar na equipe..." 
               className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold outline-none"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -133,20 +122,7 @@ export const LawyerManager: React.FC = () => {
                     <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300">OAB: {u.oab}</span>
                   </div>
                 )}
-                <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800">
-                  <i className="fas fa-clock text-slate-400 text-[10px]"></i>
-                  <span className="text-[11px] font-bold text-slate-400">Desde: {new Date(u.createdAt).toLocaleDateString()}</span>
-                </div>
               </div>
-            </div>
-            
-            <div className="px-8 py-4 bg-slate-50/50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2">
-              <button onClick={() => openModal(u)} className="p-2 text-slate-400 hover:text-blue-600 transition-colors">
-                <i className="fas fa-edit text-xs"></i>
-              </button>
-              <button onClick={() => deleteUser(u.id)} className="p-2 text-slate-400 hover:text-rose-600 transition-colors">
-                <i className="fas fa-trash-alt text-xs"></i>
-              </button>
             </div>
           </div>
         ))}
@@ -156,9 +132,7 @@ export const LawyerManager: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[32px] shadow-2xl border border-slate-800 overflow-hidden">
             <div className="px-8 py-6 border-b border-slate-800 flex justify-between items-center">
-              <h2 className="text-base font-bold text-slate-900 dark:text-white uppercase tracking-widest">
-                {formData.id ? 'Editar Cadastro' : 'Novo Membro da Banca'}
-              </h2>
+              <h2 className="text-base font-bold text-slate-900 dark:text-white uppercase tracking-widest">Novo Advogado</h2>
               <button onClick={closeModal} className="text-slate-300 hover:text-white text-2xl">&times;</button>
             </div>
             
@@ -167,17 +141,17 @@ export const LawyerManager: React.FC = () => {
 
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Nome Completo</label>
-                <input required type="text" placeholder="Ex: Dr. Roberto Mendes" className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-700 rounded-xl p-3.5 text-sm dark:text-white outline-none" value={formData.name || ''} onChange={e => setFormData({...formData, name: e.target.value})} />
+                <input required type="text" placeholder="Ex: Dr. Roberto Mendes" className="w-full bg-slate-50 dark:bg-slate-800/5 border border-slate-700 rounded-xl p-3.5 text-sm dark:text-white outline-none" value={formData.name || ''} onChange={e => setFormData({...formData, name: e.target.value})} />
               </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">E-mail de Acesso</label>
-                  <input required type="email" className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-700 rounded-xl p-3.5 text-sm dark:text-white outline-none" value={formData.email || ''} onChange={e => setFormData({...formData, email: e.target.value})} />
+                  <input required type="email" className="w-full bg-slate-50 dark:bg-slate-800/5 border border-slate-700 rounded-xl p-3.5 text-sm dark:text-white outline-none" value={formData.email || ''} onChange={e => setFormData({...formData, email: e.target.value})} />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Perfil / Cargo</label>
-                  <select className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-700 rounded-xl p-3.5 text-sm dark:text-white outline-none" value={formData.role || 'LAWYER'} onChange={e => setFormData({...formData, role: e.target.value as any})}>
+                  <select className="w-full bg-slate-50 dark:bg-slate-800/5 border border-slate-700 rounded-xl p-3.5 text-sm dark:text-white outline-none" value={formData.role || 'LAWYER'} onChange={e => setFormData({...formData, role: e.target.value as any})}>
                     <option value="LAWYER">Advogado</option>
                     <option value="ADMIN">Sócio Administrador</option>
                     <option value="ASSISTANT">Assistente / Estagiário</option>
@@ -186,28 +160,15 @@ export const LawyerManager: React.FC = () => {
                 </div>
               </div>
 
-              {!formData.id && (
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Senha Inicial</label>
-                  <input required type="password" placeholder="Defina a senha do membro" className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-700 rounded-xl p-3.5 text-sm dark:text-white outline-none" value={formData.password || ''} onChange={e => setFormData({...formData, password: e.target.value})} />
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Inscrição OAB</label>
-                  <input type="text" placeholder="OAB/UF" className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-700 rounded-xl p-3.5 text-sm dark:text-white outline-none" value={formData.oab || ''} onChange={e => setFormData({...formData, oab: e.target.value})} />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Especialidade</label>
-                  <input type="text" placeholder="Ex: Trabalhista" className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-700 rounded-xl p-3.5 text-sm dark:text-white outline-none" value={formData.specialty || ''} onChange={e => setFormData({...formData, specialty: e.target.value})} />
-                </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Senha de Acesso</label>
+                <input required type="password" placeholder="Defina a senha" className="w-full bg-slate-50 dark:bg-slate-800/5 border border-slate-700 rounded-xl p-3.5 text-sm dark:text-white outline-none" value={formData.password || ''} onChange={e => setFormData({...formData, password: e.target.value})} />
               </div>
 
               <div className="flex justify-end gap-3 pt-6">
                 <button type="button" onClick={closeModal} className="text-xs font-bold text-slate-400 uppercase tracking-widest px-4 py-2 hover:text-slate-600">Cancelar</button>
                 <button type="submit" disabled={isLoading} className="dynamic-btn px-8 py-3.5 rounded-xl text-xs uppercase tracking-widest">
-                  {isLoading ? 'Processando...' : (formData.id ? 'Salvar Alterações' : 'Criar Usuário')}
+                  {isLoading ? 'Salvando no MySQL...' : 'Salvar no Banco'}
                 </button>
               </div>
             </form>
