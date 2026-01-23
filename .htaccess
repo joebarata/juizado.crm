@@ -1,19 +1,33 @@
-# LexFlow Engine - Hostinger Optimized
+# LexFlow Standalone - Hostinger Routing Rules v2
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+    
+    # Não redirecionar arquivos reais
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # SPA Routing: Enviar tudo para index.html
+    RewriteRule . /index.html [L]
+</IfModule>
+
+# MIME Type Fix para arquivos de código
 <IfModule mod_mime.c>
     AddType application/javascript .tsx
     AddType application/javascript .ts
+    AddType application/javascript .jsx
 </IfModule>
 
+# Performance e Cache Control
 <IfModule mod_headers.c>
-    <FilesMatch "\.(tsx|ts)$">
-        Header set Content-Type "application/javascript"
+    <FilesMatch "\.(html|js|css|tsx|ts)$">
+        Header set X-Content-Type-Options "nosniff"
         Header set Access-Control-Allow-Origin "*"
     </FilesMatch>
-</IfModule>
-
-# Impedir que o WordPress redirecione o proxy
-<IfModule mod_rewrite.c>
-    RewriteEngine On
-    RewriteCond %{QUERY_STRING} lexflow_v5_engine= [NC]
-    RewriteRule ^(.*)$ index.php [L]
+    
+    # Cache agressivo para imagens e fontes
+    <FilesMatch "\.(jpg|jpeg|png|gif|svg|woff|woff2|ttf|otf)$">
+        Header set Cache-Control "max-age=2592000, public"
+    </FilesMatch>
 </IfModule>

@@ -15,13 +15,18 @@ import { LegalLibrary } from './components/LegalLibrary.tsx';
 import { MembersArea } from './components/MembersArea.tsx';
 
 const App: React.FC = () => {
-  // Estado inicial fixado em 'landing'
   const [currentView, setCurrentView] = useState<'landing' | 'login' | 'members' | 'crm'>('landing');
   const [activeTab, setActiveTab] = useState<'dashboard' | 'clients' | 'agenda' | 'lawyers' | 'financial' | 'ai' | 'kanban' | 'planning' | 'documents' | 'intelligence' | 'library'>('dashboard');
   const [user, setUser] = useState<any>(null);
 
+  // Efeito de Recuperação de Sessão (Produção)
   useEffect(() => {
     document.documentElement.classList.add('dark');
+    const savedUser = localStorage.getItem('lexflow_session');
+    if (savedUser) {
+      setUser(JSON.parse(savedUser));
+      setCurrentView('crm');
+    }
   }, []);
 
   const [lawyers] = useState([{ id: '1', name: 'Dr. Ricardo Silva', oab: '123.456/SP' }, { id: '2', name: 'Dra. Beatriz Mendes', oab: '654.321/SP' }]);
@@ -30,8 +35,15 @@ const App: React.FC = () => {
   const [transactions, setTransactions] = useState<any[]>([{ id: '1', desc: 'Honorários de Sucumbência', val: 5400.50, type: 'receita', status: 'pago', date: '2024-06-12' }]);
 
   const handleLogin = (userData: any) => {
+    localStorage.setItem('lexflow_session', JSON.stringify(userData));
     setUser(userData);
     setCurrentView('crm');
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('lexflow_session');
+    setUser(null);
+    setCurrentView('landing');
   };
 
   const menuItems = [
@@ -75,11 +87,11 @@ const App: React.FC = () => {
           ))}
         </nav>
         <div className="p-6 border-t border-white/5 space-y-4">
-          <button onClick={() => setCurrentView('landing')} className="w-full text-left px-4 py-2 text-[10px] font-black uppercase text-slate-400 hover:text-rose-500 transition-colors">
-            <i className="fas fa-sign-out-alt mr-2"></i> Sair do CRM
+          <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-[10px] font-black uppercase text-slate-400 hover:text-rose-500 transition-colors">
+            <i className="fas fa-sign-out-alt mr-2"></i> Encerrar Sessão
           </button>
           <div className="w-full flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/5">
-            <span className="text-[10px] font-black uppercase text-slate-500">Acesso Encriptado</span>
+            <span className="text-[10px] font-black uppercase text-slate-500">Acesso Seguro</span>
             <i className="fas fa-shield-halved text-blue-400"></i>
           </div>
         </div>

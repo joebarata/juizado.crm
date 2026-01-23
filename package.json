@@ -1,23 +1,21 @@
 {
-  "name": "lexflow-360---crm-jurídico-inteligente",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "name": "lexflow-360-standalone",
+  "version": "8.0.0",
+  "description": "CRM Jurídico Inteligente de Alta Performance",
+  "main": "index.html",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "start": "npx serve .",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "keywords": [
+    "crm",
+    "juridico",
+    "ai",
+    "gemini"
+  ],
+  "author": "LexFlow Tech",
+  "license": "MIT",
   "dependencies": {
-    "recharts": "^3.7.0",
-    "@google/genai": "^1.38.0",
-    "react-dom": "^19.2.3",
-    "react": "^19.2.3"
-  },
-  "devDependencies": {
-    "@types/node": "^22.14.0",
-    "@vitejs/plugin-react": "^5.0.0",
-    "typescript": "~5.8.2",
-    "vite": "^6.2.0"
+    "@google/genai": "^1.3.0"
   }
 }
