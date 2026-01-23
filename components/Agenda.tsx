@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 
+const API_URL = window.location.origin.includes('localhost') ? 'http://localhost:3001/api' : '/api';
+
 interface EventRecord {
   id: string;
   title: string;
@@ -89,20 +91,24 @@ export const Agenda: React.FC<{ events: EventRecord[], onAdd: () => void }> = ({
     setIsLoading(true);
     try {
       const session = localStorage.getItem('lexflow_session');
-      const user = session ? JSON.parse(session) : null;
+      const token = session ? JSON.parse(session).token : '';
       
-      const res = await fetch('http://localhost:3001/api/agenda', {
+      const res = await fetch(`${API_URL}/agenda`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'x-user-id': user?.id || ''
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(formData)
       });
       if (res.ok) {
         onAdd();
         setIsModalOpen(false);
+      } else {
+        alert('Erro ao salvar compromisso.');
       }
+    } catch (e) {
+      alert('Erro de conexão com o servidor.');
     } finally {
       setIsLoading(false);
     }
@@ -120,7 +126,7 @@ export const Agenda: React.FC<{ events: EventRecord[], onAdd: () => void }> = ({
         </button>
       </header>
       
-      <div className="glass-card p-8">
+      <div className="soft-glass p-8 bg-white/5">
         <div ref={calendarRef}></div>
       </div>
 
@@ -141,8 +147,8 @@ export const Agenda: React.FC<{ events: EventRecord[], onAdd: () => void }> = ({
                 <option value="outro">Outro</option>
               </select>
               <div className="flex justify-end gap-3 pt-4">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="text-xs font-bold text-slate-400">Cancelar</button>
-                <button type="submit" disabled={isLoading} className="dynamic-btn px-8 py-3 rounded-xl text-xs uppercase">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="text-xs font-bold text-slate-400 uppercase tracking-widest">Cancelar</button>
+                <button type="submit" disabled={isLoading} className="dynamic-btn px-8 py-3 rounded-xl text-xs uppercase tracking-widest">
                   {isLoading ? 'Salvando...' : 'Salvar'}
                 </button>
               </div>
