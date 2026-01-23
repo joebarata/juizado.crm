@@ -19,7 +19,7 @@ const dbConfig = {
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  connectTimeout: 10000
+  connectTimeout: 20000
 };
 
 const pool = mysql.createPool(dbConfig);
@@ -60,14 +60,14 @@ async function setupDatabase() {
     await connection.query(`CREATE TABLE IF NOT EXISTS financial (id INT AUTO_INCREMENT PRIMARY KEY, description VARCHAR(255), amount DECIMAL(10,2), type ENUM('receita', 'despesa'), status ENUM('pago', 'pendente'), date DATE, createdAt DATETIME DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`);
     await connection.query(`CREATE TABLE IF NOT EXISTS agenda (id INT AUTO_INCREMENT PRIMARY KEY, title VARCHAR(255), description TEXT, date DATE, time TIME, type ENUM('audiencia', 'prazo', 'reuniao', 'outro'), createdAt DATETIME DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`);
 
-    // Inserir Admin Padrão se não existir
+    // Inserir Admin Padrão
     const [rows] = await connection.query('SELECT * FROM users WHERE email = ?', ['admin@admin.com']);
     if (rows.length === 0) {
       const hashed = bcrypt.hashSync('admin123', 10);
       await connection.query('INSERT INTO users (nome, email, senha, perfil) VALUES (?, ?, ?, ?)', ['Administrador', 'admin@admin.com', hashed, 'admin']);
     }
 
-    // Inserir Juízes se não existirem
+    // Inserir Juízes Base
     const [existingJudges] = await connection.query('SELECT count(*) as count FROM judges');
     if (existingJudges[0].count === 0) {
       await connection.query(`
@@ -79,7 +79,6 @@ async function setupDatabase() {
         ('Dr. Ricardo Borges', '2ª Vara Cível - BH', 55.4, 390, 4, 112, 'Imobiliário')
       `);
     }
-
   } catch (err) {
     console.error("❌ ERRO MOTOR DB:", err.message);
   } finally {
@@ -97,13 +96,13 @@ const authMiddleware = (req, res, next) => {
   });
 };
 
-// Log de requisições para debug
+// Logger de Requisições
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
   next();
 });
 
-// Rotas da API
+// ROTAS API
 app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body;
   try {
@@ -114,12 +113,19 @@ app.post('/api/auth/login', async (req, res) => {
     const token = jwt.sign({ id: user.id, email: user.email, perfil: user.perfil }, JWT_SECRET, { expiresIn: '12h' });
     res.json({ user: { id: user.id.toString(), nome: user.nome, email: user.email, perfil: user.perfil, ativo: true }, token });
   } catch (err) { 
-    console.error(err);
     res.status(500).json({ error: 'Erro interno no login.' }); 
   }
 });
 
-// CRUD CLIENTES
+app.get('/api/judges', authMiddleware, async (req, res) => {
+  try {
+    const [rows] = await pool.query('SELECT * FROM judges ORDER BY win_rate DESC');
+    res.json(rows);
+  } catch (err) { 
+    res.status(500).json({ error: 'Erro ao buscar juízes.' }); 
+  }
+});
+
 app.get('/api/clients', authMiddleware, async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT * FROM clients ORDER BY createdAt DESC');
@@ -127,15 +133,6 @@ app.get('/api/clients', authMiddleware, async (req, res) => {
   } catch (err) { res.status(500).json([]); }
 });
 
-app.post('/api/clients', authMiddleware, async (req, res) => {
-  const { name, type, doc, email, city } = req.body;
-  try {
-    await pool.query('INSERT INTO clients (name, type, doc, email, city) VALUES (?, ?, ?, ?, ?)', [name, type, doc, email, city]);
-    res.json({ success: true });
-  } catch (err) { res.status(500).json({ error: 'Erro ao salvar cliente.' }); }
-});
-
-// CRUD FINANCEIRO
 app.get('/api/financial', authMiddleware, async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT * FROM financial ORDER BY date DESC');
@@ -143,15 +140,6 @@ app.get('/api/financial', authMiddleware, async (req, res) => {
   } catch (err) { res.status(500).json([]); }
 });
 
-app.post('/api/financial', authMiddleware, async (req, res) => {
-  const { description, amount, type, status, date } = req.body;
-  try {
-    await pool.query('INSERT INTO financial (description, amount, type, status, date) VALUES (?, ?, ?, ?, ?)', [description, amount, type, status, date]);
-    res.json({ success: true });
-  } catch (err) { res.status(500).json({ error: 'Erro ao salvar transação.' }); }
-});
-
-// CRUD AGENDA
 app.get('/api/agenda', authMiddleware, async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT * FROM agenda ORDER BY date DESC');
@@ -159,45 +147,16 @@ app.get('/api/agenda', authMiddleware, async (req, res) => {
   } catch (err) { res.status(500).json([]); }
 });
 
-app.post('/api/agenda', authMiddleware, async (req, res) => {
-  const { title, description, date, time, type } = req.body;
-  try {
-    await pool.query('INSERT INTO agenda (title, description, date, time, type) VALUES (?, ?, ?, ?, ?)', [title, description, date, time, type]);
-    res.json({ success: true });
-  } catch (err) { res.status(500).json({ error: 'Erro ao salvar compromisso.' }); }
-});
-
-// CRUD USUÁRIOS
 app.get('/api/users', authMiddleware, async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT id, nome, email, perfil, ativo, oab, createdAt FROM users ORDER BY nome ASC');
+    const [rows] = await pool.query('SELECT id, nome, email, perfil, ativo, oab, createdAt FROM users');
     res.json(rows);
   } catch (err) { res.status(500).json([]); }
 });
 
-app.post('/api/users', authMiddleware, async (req, res) => {
-  const { name, email, password, role } = req.body;
-  try {
-    const hashed = bcrypt.hashSync(password, 10);
-    await pool.query('INSERT INTO users (nome, email, senha, perfil) VALUES (?, ?, ?, ?)', [name, email, hashed, role.toLowerCase()]);
-    res.json({ success: true });
-  } catch (err) { res.status(500).json({ error: 'Erro ao criar usuário.' }); }
-});
-
-// JUÍZES
-app.get('/api/judges', authMiddleware, async (req, res) => {
-  try {
-    const [rows] = await pool.query('SELECT * FROM judges ORDER BY win_rate DESC');
-    res.json(rows);
-  } catch (err) { 
-    console.error(err);
-    res.status(500).json({ error: 'Erro ao buscar juízes.' }); 
-  }
-});
-
-// Rota genérica para 404 da API
-app.use('/api/*', (req, res) => {
-  res.status(404).json({ error: `Rota ${req.originalUrl} não encontrada no LexFlow Backend.` });
+// Captura 404 (Deve ser o último da API)
+app.all('/api/*', (req, res) => {
+  res.status(404).json({ error: `Recurso ${req.url} não encontrado no LexFlow API.` });
 });
 
 const PORT = process.env.PORT || 3001;
