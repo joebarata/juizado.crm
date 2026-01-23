@@ -19,7 +19,7 @@ const dbConfig = {
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  connectTimeout: 20000
+  connectTimeout: 20000 // Aumentado para 20s para mitigar latência na Hostinger
 };
 
 const pool = mysql.createPool(dbConfig);
@@ -96,7 +96,7 @@ const authMiddleware = (req, res, next) => {
   });
 };
 
-// Logger de Requisições
+// Logger de Requisições para diagnóstico na Hostinger
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
   next();

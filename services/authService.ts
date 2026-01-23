@@ -30,10 +30,10 @@ export const authService = {
       
       const text = await res.text();
       
-      // Detecção de resposta HTML em vez de JSON (Erro de servidor)
+      // Detecção de resposta HTML em vez de JSON (Erro de servidor ou rota 404 desviada)
       if (text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
         console.error("Servidor retornou HTML em vez de JSON. Verifique as rotas da API no Hostinger.");
-        throw new Error('Erro na configuração do servidor (Rota da API retornou HTML). Contate o administrador.');
+        throw new Error('Servidor em manutenção momentânea (Erro de rota).');
       }
 
       let data;
@@ -50,7 +50,7 @@ export const authService = {
       return data;
     } catch (err: any) {
       if (err.message.includes('Failed to fetch')) {
-        throw new Error('Servidor de API inacessível. Verifique o status do Node.js.');
+        throw new Error('Servidor de API inacessível. Verifique o status do Node.js no painel Hostinger.');
       }
       throw err;
     }
@@ -68,7 +68,11 @@ export const authService = {
           'Content-Type': 'application/json'
         }
       });
-      const data = await res.json();
+      
+      const text = await res.text();
+      if (text.trim().startsWith('<!DOCTYPE')) return [];
+      
+      const data = JSON.parse(text);
       return Array.isArray(data) ? data : [];
     } catch (e) {
       return [];
