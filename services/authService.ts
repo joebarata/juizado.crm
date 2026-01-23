@@ -1,3 +1,4 @@
+
 const API_URL = window.location.origin.includes('localhost') ? 'http://localhost:3001/api' : '/api';
 
 export interface AuthResponse {
@@ -7,11 +8,11 @@ export interface AuthResponse {
 
 export const authService = {
   authenticate: async (email: string, pass: string): Promise<AuthResponse | null> => {
-    // Demo Mode
+    // Modo Demo Offline
     if (email === 'demo@juizado.com' && pass === 'demo123') {
       return { 
-        user: { id: 0, nome: 'Advogado Demo', plan: 'pro', orgName: 'Demo Office' }, 
-        token: 'demo-token' 
+        user: { id: 0, nome: 'Advogado Demo', plan: 'pro', orgName: 'Demo Office', perfil: 'admin' }, 
+        token: 'demo-token-bypass' 
       };
     }
 
@@ -24,11 +25,11 @@ export const authService = {
       
       const contentType = res.headers.get("content-type");
       if (contentType && contentType.includes("text/html")) {
-        throw new Error('O servidor juizado.com está em manutenção ou mal configurado.');
+        throw new Error('Erro de Conexão: O servidor juizado.com está a responder com uma página HTML em vez de dados. Verifique a configuração do proxy.');
       }
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Falha na autenticação.');
+      if (!res.ok) throw new Error(data.error || 'Credenciais inválidas ou organização inativa.');
       
       return data;
     } catch (err: any) {

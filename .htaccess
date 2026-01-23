@@ -1,24 +1,41 @@
-# juizado.com - Hostinger SaaS Config
+
+# juizado.com - Configuração de Produção Hostinger
 <IfModule mod_rewrite.c>
     RewriteEngine On
     RewriteBase /
     
-    # 1. Roteamento de API para o processo Node na porta 3001
+    # 1. Forçar HTTPS
+    RewriteCond %{HTTPS} off
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # 2. Roteamento de API para o Node.js (Porta 3001)
+    # Importante: O [P] exige mod_proxy e mod_proxy_http habilitados na Hostinger
     RewriteCond %{REQUEST_URI} ^/api [NC]
     RewriteRule ^api/(.*)$ http://localhost:3001/api/$1 [P,L]
 
-    # 2. Suporte SPA (React)
+    # 3. Suporte SPA (Single Page Application)
+    # Se o arquivo ou diretório solicitado não existir, redireciona para o index.html
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule . /index.html [L]
 </IfModule>
 
-<IfModule mod_headers.c>
-    Header set Access-Control-Allow-Origin "*"
-    Header set X-Content-Type-Options "nosniff"
+# Cache de Navegador para Estáticos (Performance)
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType image/jpg "access plus 1 year"
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/gif "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType application/pdf "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+    ExpiresDefault "access plus 2 days"
 </IfModule>
 
-# Compressão Gzip para performance SaaS
-<IfModule mod_deflate.c>
-    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css application/javascript application/json
+<IfModule mod_headers.c>
+    Header set Access-Control-Allow-Origin "*"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+    Header set X-Content-Type-Options "nosniff"
 </IfModule>

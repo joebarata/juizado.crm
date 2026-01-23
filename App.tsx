@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { LandingPage } from './components/LandingPage';
 import { Login } from './components/Login';
@@ -13,18 +14,16 @@ import { DocumentTemplates } from './components/DocumentTemplates';
 import { IntelligenceModule } from './components/IntelligenceModule';
 import { LegalLibrary } from './components/LegalLibrary';
 import { MembersArea } from './components/MembersArea';
-import { CNPJConsultation } from './components/CNPJConsultation';
-import { CPFConsultation } from './components/CPFConsultation';
 import { FiscalDocumentModule } from './components/FiscalDocumentModule';
 
 const API_URL = window.location.origin.includes('localhost') ? 'http://localhost:3001/api' : '/api';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<'landing' | 'login' | 'members' | 'crm'>('landing');
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'clients' | 'agenda' | 'lawyers' | 'financial' | 'ai' | 'kanban' | 'planning' | 'documents' | 'intelligence' | 'library' | 'cnpj' | 'cpf' | 'fiscal'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'clients' | 'agenda' | 'lawyers' | 'financial' | 'ai' | 'kanban' | 'planning' | 'documents' | 'intelligence' | 'library' | 'fiscal'>('dashboard');
   const [auth, setAuth] = useState<any>(null);
   const [showMoreMobile, setShowMoreMobile] = useState(false);
-  const [maintenanceMode, setMaintenanceMode] = useState<string | null>(null);
+  const [errorStatus, setErrorStatus] = useState<string | null>(null);
   
   const [clients, setClients] = useState<any[]>([]);
   const [events, setEvents] = useState<any[]>([]);
@@ -57,15 +56,21 @@ const App: React.FC = () => {
       const res = await fetch(url, options);
       const contentType = res.headers.get("content-type");
       
+      // Se o servidor retornar HTML (como o index.html da Hostinger em 404), interrompemos para evitar JSON parse loop
       if (contentType && contentType.includes("text/html")) {
         throw new Error("HTML_RESPONSE");
       }
       
-      if (!res.ok) return null;
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || `Erro ${res.status}`);
+      }
       return await res.json();
     } catch (e: any) {
       if (e.message === "HTML_RESPONSE") {
-        setMaintenanceMode("O servidor juizado.com está a responder em modo de manutenção ou erro de rota.");
+        setErrorStatus("Erro de Configuração: O backend não foi encontrado ou está em modo de manutenção.");
+      } else {
+        console.error("Fetch Error:", e.message);
       }
       return null;
     }
@@ -73,24 +78,20 @@ const App: React.FC = () => {
 
   const loadAllData = async () => {
     if (!auth || !auth.token) return;
-    try {
-      const h = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${auth.token}` };
-      const options = { headers: h };
+    const h = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${auth.token}` };
+    const options = { headers: h };
 
-      const [cData, eData, fData, uData] = await Promise.all([
-        fetchSafe(`${API_URL}/clients`, options),
-        fetchSafe(`${API_URL}/agenda`, options),
-        fetchSafe(`${API_URL}/financial`, options),
-        fetchSafe(`${API_URL}/users`, options)
-      ]);
+    const [cData, eData, fData, uData] = await Promise.all([
+      fetchSafe(`${API_URL}/clients`, options),
+      fetchSafe(`${API_URL}/agenda`, options),
+      fetchSafe(`${API_URL}/financial`, options),
+      fetchSafe(`${API_URL}/users`, options)
+    ]);
 
-      if (cData) setClients(cData);
-      if (eData) setEvents(eData);
-      if (fData) setFinancials(fData);
-      if (uData) setUsers(uData);
-    } catch (e) {
-      console.warn("juizado.com: Falha na sincronização SaaS.");
-    }
+    if (cData) setClients(cData);
+    if (eData) setEvents(eData);
+    if (fData) setFinancials(fData);
+    if (uData) setUsers(uData);
   };
 
   const handleLogin = (authResponse: any) => {
@@ -124,19 +125,16 @@ const App: React.FC = () => {
     if (!item) return true;
     const userPlan = auth?.user?.plan || 'basico';
     const planLevels = { 'basico': 0, 'pro': 1, 'master': 2 };
-    return planLevels[userPlan] >= planLevels[item.minPlan];
+    return (planLevels as any)[userPlan] >= (planLevels as any)[item.minPlan];
   };
 
-  const filteredMenuItems = menuItems.filter(item => !item.adminOnly || auth?.user?.perfil === 'admin');
-  const activeLabel = filteredMenuItems.find(i => i.id === activeTab)?.label;
-
-  if (maintenanceMode) return (
+  if (errorStatus) return (
     <div className="h-screen w-full flex items-center justify-center bg-slate-950 p-10 text-center">
       <div className="max-w-md space-y-6">
-        <div className="text-blue-500 text-5xl mb-4"><i className="fas fa-server"></i></div>
+        <div className="text-rose-500 text-5xl mb-4"><i className="fas fa-exclamation-triangle"></i></div>
         <h1 className="text-2xl font-black text-white uppercase tracking-tighter">juizado.com</h1>
-        <p className="text-slate-400 font-medium">{maintenanceMode}</p>
-        <button onClick={() => window.location.reload()} className="dynamic-btn px-8 py-3 rounded-xl text-xs uppercase tracking-widest">Tentar Novamente</button>
+        <p className="text-slate-400 font-medium">{errorStatus}</p>
+        <button onClick={() => window.location.reload()} className="dynamic-btn px-8 py-3 rounded-xl text-xs uppercase tracking-widest">Tentar Reconectar</button>
       </div>
     </div>
   );
@@ -145,9 +143,12 @@ const App: React.FC = () => {
   if (currentView === 'login') return <Login onLogin={handleLogin} onBack={() => setCurrentView('landing')} />;
   if (currentView === 'members') return <MembersArea onBack={() => setCurrentView('landing')} onGoToCRM={() => setCurrentView('login')} />;
 
+  const filteredMenuItems = menuItems.filter(item => !item.adminOnly || auth?.user?.perfil === 'admin');
+  const activeLabel = filteredMenuItems.find(i => i.id === activeTab)?.label;
+
   return (
     <div className="flex flex-col h-screen w-full bg-slate-950 overflow-hidden font-sans text-white">
-      {/* MAC STYLE DOCK - DESKTOP */}
+      {/* MAC DOCK - DESKTOP */}
       <div className="fixed top-6 left-8 z-[60] hidden lg:flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/30">
           <i className="fas fa-balance-scale text-lg"></i>
@@ -170,6 +171,10 @@ const App: React.FC = () => {
               {!checkPlanAccess(item.id) && <div className="absolute -top-1 -right-1 w-3 h-3 bg-amber-500 rounded-full border-2 border-slate-900 flex items-center justify-center"><i className="fas fa-lock text-[5px] text-white"></i></div>}
             </button>
           ))}
+          <div className="w-px h-6 bg-white/10 mx-2"></div>
+          <button onClick={handleLogout} className="w-11 h-11 flex items-center justify-center rounded-xl text-slate-400 hover:text-rose-500 transition-all">
+            <i className="fas fa-power-off text-lg"></i>
+          </button>
         </div>
       </nav>
 
@@ -189,8 +194,8 @@ const App: React.FC = () => {
               <div className="h-[60vh] flex flex-col items-center justify-center text-center space-y-6">
                 <div className="w-20 h-20 rounded-3xl bg-amber-500/10 flex items-center justify-center text-amber-500 text-3xl"><i className="fas fa-lock"></i></div>
                 <div className="max-w-md">
-                  <h2 className="text-2xl font-black uppercase tracking-tight text-white">Módulo Master</h2>
-                  <p className="text-slate-500 mt-2">Esta funcionalidade exige o Plano Master do juizado.com para análise profunda de dados.</p>
+                  <h2 className="text-2xl font-black uppercase tracking-tight text-white">Módulo Premium</h2>
+                  <p className="text-slate-500 mt-2">Esta funcionalidade exige o Plano {menuItems.find(i => i.id === activeTab)?.minPlan.toUpperCase()} do juizado.com.</p>
                 </div>
               </div>
             ) : (
