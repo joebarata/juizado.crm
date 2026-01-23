@@ -14,12 +14,13 @@ import { IntelligenceModule } from './components/IntelligenceModule';
 import { LegalLibrary } from './components/LegalLibrary';
 import { MembersArea } from './components/MembersArea';
 import { CNPJConsultation } from './components/CNPJConsultation';
+import { CPFConsultation } from './components/CPFConsultation';
 
 const API_URL = window.location.origin.includes('localhost') ? 'http://localhost:3001/api' : '/api';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<'landing' | 'login' | 'members' | 'crm'>('landing');
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'clients' | 'agenda' | 'lawyers' | 'financial' | 'ai' | 'kanban' | 'planning' | 'documents' | 'intelligence' | 'library' | 'cnpj'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'clients' | 'agenda' | 'lawyers' | 'financial' | 'ai' | 'kanban' | 'planning' | 'documents' | 'intelligence' | 'library' | 'cnpj' | 'cpf'>('dashboard');
   const [auth, setAuth] = useState<any>(null);
   
   const [clients, setClients] = useState<any[]>([]);
@@ -113,6 +114,7 @@ const App: React.FC = () => {
     { id: 'documents', label: 'Modelos & Peças', icon: 'fa-file-signature' },
     { id: 'library', label: 'Acervo & Teses', icon: 'fa-book-bookmark' },
     { id: 'cnpj', label: 'Consulta CNPJ', icon: 'fa-building-shield' },
+    { id: 'cpf', label: 'Consulta CPF', icon: 'fa-id-card' },
     { id: 'clients', label: 'Clientes', icon: 'fa-user-tie' },
     { id: 'agenda', label: 'Prazos & Agenda', icon: 'fa-calendar-alt' },
     { id: 'lawyers', label: 'Equipe Jurídica', icon: 'fa-users-gear', adminOnly: true },
@@ -191,6 +193,7 @@ const App: React.FC = () => {
             {activeTab === 'documents' && <DocumentTemplates />}
             {activeTab === 'library' && <LegalLibrary />}
             {activeTab === 'cnpj' && <CNPJConsultation />}
+            {activeTab === 'cpf' && <CPFConsultation />}
             {activeTab === 'kanban' && <KanbanPipeline />}
             {activeTab === 'planning' && <StrategicPlanning />}
             {activeTab === 'lawyers' && <LawyerManager users={users} onUpdate={loadAllData} />}
