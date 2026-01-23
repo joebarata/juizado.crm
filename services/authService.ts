@@ -5,7 +5,8 @@ export interface User {
   nome: string;
   email: string;
   perfil: 'admin' | 'advogado' | 'demo';
-  ativo: boolean;
+  plan: 'basico' | 'pro' | 'master';
+  orgName: string;
 }
 
 export interface AuthResponse {
@@ -15,10 +16,17 @@ export interface AuthResponse {
 
 export const authService = {
   authenticate: async (email: string, pass: string): Promise<AuthResponse | null> => {
-    // Modo Demo local
-    if (email === 'demo@crm.com' && pass === 'demo123') {
-      const mockUser: User = { id: '0', nome: 'Usuário Demo', email: 'demo@crm.com', perfil: 'demo', ativo: true };
-      return { user: mockUser, token: `demo-token-${btoa(email)}` };
+    // Modo Demo local para juizado.com
+    if (email === 'demo@juizado.com' && pass === 'demo123') {
+      const mockUser: User = { 
+        id: '0', 
+        nome: 'Usuário Demo', 
+        email: 'demo@juizado.com', 
+        perfil: 'demo', 
+        plan: 'pro',
+        orgName: 'Escritório de Testes'
+      };
+      return { user: mockUser, token: `demo-saas-token-${btoa(email)}` };
     }
 
     try {
@@ -30,52 +38,27 @@ export const authService = {
       
       const text = await res.text();
       
-      // Detecção de resposta HTML em vez de JSON (Erro de servidor ou rota 404 desviada)
       if (text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
-        console.error("Servidor retornou HTML em vez de JSON. Verifique as rotas da API no Hostinger.");
-        throw new Error('Servidor em manutenção momentânea (Erro de rota).');
+        throw new Error('Servidor juizado.com em manutenção (HTML Error).');
       }
 
       let data;
       try {
         data = JSON.parse(text);
       } catch (e) {
-        throw new Error('Falha ao processar resposta do servidor.');
+        throw new Error('Falha no processamento SaaS.');
       }
       
       if (!res.ok) {
-        throw new Error(data.error || 'Falha na autenticação.');
+        throw new Error(data.error || 'Autenticação SaaS negada.');
       }
       
       return data;
     } catch (err: any) {
       if (err.message.includes('Failed to fetch')) {
-        throw new Error('Servidor de API inacessível. Verifique o status do Node.js no painel Hostinger.');
+        throw new Error('Endpoint juizado.com offline. Verifique o status na Hostinger.');
       }
       throw err;
-    }
-  },
-
-  getUsers: async (): Promise<User[]> => {
-    const session = localStorage.getItem('lexflow_session');
-    if (!session) return [];
-    
-    try {
-      const { token } = JSON.parse(session);
-      const res = await fetch(`${API_URL}/users`, {
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      const text = await res.text();
-      if (text.trim().startsWith('<!DOCTYPE')) return [];
-      
-      const data = JSON.parse(text);
-      return Array.isArray(data) ? data : [];
-    } catch (e) {
-      return [];
     }
   }
 };
