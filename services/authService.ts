@@ -1,4 +1,3 @@
-
 const API_URL = window.location.origin.includes('localhost') ? 'http://localhost:3001/api' : '/api';
 
 export interface User {
@@ -22,24 +21,36 @@ export const authService = {
       return { user: mockUser, token: `demo-token-${btoa(email)}` };
     }
 
-    // Modo Real (MySQL + JWT)
     try {
       const res = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password: pass })
+        body: JSON.stringify({ email: email.trim(), password: pass })
       });
       
-      const data = await res.json();
+      const text = await res.text();
+      
+      // Detecção de resposta HTML em vez de JSON (Erro de servidor)
+      if (text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
+        console.error("Servidor retornou HTML em vez de JSON. Verifique as rotas da API no Hostinger.");
+        throw new Error('Erro na configuração do servidor (Rota da API retornou HTML). Contate o administrador.');
+      }
+
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        throw new Error('Falha ao processar resposta do servidor.');
+      }
       
       if (!res.ok) {
-        throw new Error(data.error || 'Erro inesperado no servidor.');
+        throw new Error(data.error || 'Falha na autenticação.');
       }
       
       return data;
     } catch (err: any) {
       if (err.message.includes('Failed to fetch')) {
-        throw new Error('Servidor offline. Verifique sua conexão ou se o Node.js está rodando na Hostinger.');
+        throw new Error('Servidor de API inacessível. Verifique o status do Node.js.');
       }
       throw err;
     }
@@ -57,8 +68,8 @@ export const authService = {
           'Content-Type': 'application/json'
         }
       });
-      if (!res.ok) return [];
-      return await res.json();
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
     } catch (e) {
       return [];
     }

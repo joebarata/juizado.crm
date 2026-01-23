@@ -13,12 +13,13 @@ import { DocumentTemplates } from './components/DocumentTemplates';
 import { IntelligenceModule } from './components/IntelligenceModule';
 import { LegalLibrary } from './components/LegalLibrary';
 import { MembersArea } from './components/MembersArea';
+import { CNPJConsultation } from './components/CNPJConsultation';
 
 const API_URL = window.location.origin.includes('localhost') ? 'http://localhost:3001/api' : '/api';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<'landing' | 'login' | 'members' | 'crm'>('landing');
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'clients' | 'agenda' | 'lawyers' | 'financial' | 'ai' | 'kanban' | 'planning' | 'documents' | 'intelligence' | 'library'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'clients' | 'agenda' | 'lawyers' | 'financial' | 'ai' | 'kanban' | 'planning' | 'documents' | 'intelligence' | 'library' | 'cnpj'>('dashboard');
   const [auth, setAuth] = useState<any>(null);
   
   const [clients, setClients] = useState<any[]>([]);
@@ -31,8 +32,12 @@ const App: React.FC = () => {
     if (saved) {
       try {
         const session = JSON.parse(saved);
-        setAuth(session);
-        setCurrentView('crm');
+        if (session && session.token) {
+          setAuth(session);
+          setCurrentView('crm');
+        } else {
+          localStorage.removeItem('lexflow_session');
+        }
       } catch (e) {
         localStorage.removeItem('lexflow_session');
       }
@@ -40,39 +45,51 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (auth) loadAllData();
+    if (auth && auth.token) loadAllData();
   }, [auth]);
 
   const getHeaders = () => ({
     'Content-Type': 'application/json',
-    'x-user-id': auth?.user?.id || '',
     'Authorization': `Bearer ${auth?.token || ''}`
   });
 
   const loadAllData = async () => {
+    if (!auth || !auth.token) return;
+    
     try {
       const h = getHeaders();
-      const [cRes, eRes, fRes, uRes] = await Promise.all([
-        fetch(`${API_URL}/clients`, { headers: h }).catch(() => ({ ok: false })),
-        fetch(`${API_URL}/agenda`, { headers: h }).catch(() => ({ ok: false })),
-        fetch(`${API_URL}/financial`, { headers: h }).catch(() => ({ ok: false })),
-        fetch(`${API_URL}/users`, { headers: h }).catch(() => ({ ok: false }))
+      const options = { headers: h };
+
+      const fetchSafe = async (url: string) => {
+        try {
+          const res = await fetch(url, options);
+          if (!res.ok) return null;
+          const text = await res.text();
+          try {
+            return JSON.parse(text);
+          } catch (e) {
+            console.error(`Resposta inválida (não-JSON) de ${url}:`, text.substring(0, 100));
+            return null;
+          }
+        } catch (e) {
+          return null;
+        }
+      };
+
+      const [cData, eData, fData, uData] = await Promise.all([
+        fetchSafe(`${API_URL}/clients`),
+        fetchSafe(`${API_URL}/agenda`),
+        fetchSafe(`${API_URL}/financial`),
+        fetchSafe(`${API_URL}/users`)
       ]);
 
-      if (cRes.ok) setClients(await (cRes as Response).json());
-      else setClients([{ id: 'mock1', name: 'Exemplo de Cliente', type: 'PF', doc: '123.456.789-00', email: 'cliente@exemplo.com', city: 'São Paulo', cases: 2 }]);
-
-      if (eRes.ok) setEvents(await (eRes as Response).json());
-      else setEvents([{ id: 'e1', title: 'Audiência de Conciliação', date: new Date().toISOString().split('T')[0], time: '14:00', type: 'audiencia' }]);
-
-      if (fRes.ok) setFinancials(await (fRes as Response).json());
-      else setFinancials([{ id: 'f1', desc: 'Honorários Contratuais', val: 5000, type: 'receita', status: 'pago', date: '2024-05-20' }]);
-
-      if (uRes.ok) setUsers(await (uRes as Response).json());
-      else setUsers([{ id: 'admin_sim', name: auth?.user?.nome || 'Admin', email: auth?.user?.email || 'admin@admin.com', perfil: 'admin', ativo: true }]);
+      if (cData) setClients(cData);
+      if (eData) setEvents(eData);
+      if (fData) setFinancials(fData);
+      if (uData) setUsers(uData);
 
     } catch (e) {
-      console.warn("LexFlow: Sincronização offline.");
+      console.warn("LexFlow: Erro de sincronização.", e);
     }
   };
 
@@ -95,6 +112,7 @@ const App: React.FC = () => {
     { id: 'planning', label: 'Estratégico & BI', icon: 'fa-chess-knight' },
     { id: 'documents', label: 'Modelos & Peças', icon: 'fa-file-signature' },
     { id: 'library', label: 'Acervo & Teses', icon: 'fa-book-bookmark' },
+    { id: 'cnpj', label: 'Consulta CNPJ', icon: 'fa-building-shield' },
     { id: 'clients', label: 'Clientes', icon: 'fa-user-tie' },
     { id: 'agenda', label: 'Prazos & Agenda', icon: 'fa-calendar-alt' },
     { id: 'lawyers', label: 'Equipe Jurídica', icon: 'fa-users-gear', adminOnly: true },
@@ -115,7 +133,7 @@ const App: React.FC = () => {
       <aside className="w-72 h-full backdrop-blur-3xl border-r border-white/10 flex flex-col z-30 bg-slate-900/70">
         <div className="p-8 mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
+            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
               <i className="fas fa-balance-scale"></i>
             </div>
             <div>
@@ -172,6 +190,7 @@ const App: React.FC = () => {
             {activeTab === 'agenda' && <Agenda events={events} onAdd={loadAllData} />}
             {activeTab === 'documents' && <DocumentTemplates />}
             {activeTab === 'library' && <LegalLibrary />}
+            {activeTab === 'cnpj' && <CNPJConsultation />}
             {activeTab === 'kanban' && <KanbanPipeline />}
             {activeTab === 'planning' && <StrategicPlanning />}
             {activeTab === 'lawyers' && <LawyerManager users={users} onUpdate={loadAllData} />}

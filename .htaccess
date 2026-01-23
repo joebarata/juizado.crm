@@ -1,33 +1,24 @@
-# LexFlow Standalone - Hostinger Routing Rules v2
+# LexFlow 360 - Hostinger Config
 <IfModule mod_rewrite.c>
     RewriteEngine On
     RewriteBase /
     
-    # Não redirecionar arquivos reais
-    RewriteCond %{REQUEST_FILENAME} -f [OR]
-    RewriteCond %{REQUEST_FILENAME} -d
-    RewriteRule ^ - [L]
+    # INTERCEPTAR CHAMADAS DE API E ENVIAR PARA PORTA 3001
+    RewriteCond %{REQUEST_URI} ^/api [NC]
+    RewriteRule ^api/(.*)$ http://localhost:3001/api/$1 [P,L]
 
-    # SPA Routing: Enviar tudo para index.html
+    # SUPORTE PARA SINGLE PAGE APPLICATION (React)
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule . /index.html [L]
 </IfModule>
 
-# MIME Type Fix para arquivos de código
+<IfModule mod_headers.c>
+    Header set Access-Control-Allow-Origin "*"
+    Header set Access-Control-Allow-Headers "Origin, X-Requested-With, Content-Type, Accept, Authorization, x-user-id"
+</IfModule>
+
 <IfModule mod_mime.c>
     AddType application/javascript .tsx
     AddType application/javascript .ts
-    AddType application/javascript .jsx
-</IfModule>
-
-# Performance e Cache Control
-<IfModule mod_headers.c>
-    <FilesMatch "\.(html|js|css|tsx|ts)$">
-        Header set X-Content-Type-Options "nosniff"
-        Header set Access-Control-Allow-Origin "*"
-    </FilesMatch>
-    
-    # Cache agressivo para imagens e fontes
-    <FilesMatch "\.(jpg|jpeg|png|gif|svg|woff|woff2|ttf|otf)$">
-        Header set Cache-Control "max-age=2592000, public"
-    </FilesMatch>
 </IfModule>
