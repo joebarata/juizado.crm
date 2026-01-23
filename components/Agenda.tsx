@@ -9,25 +9,20 @@ interface EventRecord {
   type: 'audiencia' | 'prazo' | 'reuniao' | 'outro';
 }
 
-export const Agenda: React.FC<{ events: EventRecord[], setEvents: React.Dispatch<React.SetStateAction<EventRecord[]>> }> = ({ events, setEvents }) => {
+export const Agenda: React.FC<{ events: EventRecord[], onAdd: () => void }> = ({ events, onAdd }) => {
   const calendarRef = useRef<HTMLDivElement>(null);
   const [calendarInstance, setCalendarInstance] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isCalendarReady, setIsCalendarReady] = useState(false);
   const [formData, setFormData] = useState<Partial<EventRecord>>({
     type: 'outro',
     date: new Date().toISOString().split('T')[0],
     time: '09:00'
   });
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const FullCalendar = (window as any).FullCalendar;
-
-    if (!FullCalendar) {
-      console.warn("Agenda: FullCalendar ainda não carregado. Tentando novamente em breve...");
-      const timer = setTimeout(() => setIsCalendarReady(prev => !prev), 500);
-      return () => clearTimeout(timer);
-    }
+    if (!FullCalendar) return;
 
     if (calendarRef.current && !calendarInstance) {
       const calendar = new FullCalendar.Calendar(calendarRef.current, {
@@ -50,10 +45,6 @@ export const Agenda: React.FC<{ events: EventRecord[], setEvents: React.Dispatch
           textColor: '#334155',
           extendedProps: { ...e }
         })),
-        eventClick: (info: any) => {
-          setFormData(info.event.extendedProps);
-          setIsModalOpen(true);
-        },
         dateClick: (info: any) => {
           setFormData({ title: '', description: '', type: 'outro', date: info.dateStr, time: '09:00' });
           setIsModalOpen(true);
@@ -73,7 +64,7 @@ export const Agenda: React.FC<{ events: EventRecord[], setEvents: React.Dispatch
         extendedProps: { ...e }
       })));
     }
-  }, [events, calendarInstance, isCalendarReady]);
+  }, [events, calendarInstance]);
 
   const getEventColor = (type: string) => {
     switch(type) {
@@ -93,14 +84,28 @@ export const Agenda: React.FC<{ events: EventRecord[], setEvents: React.Dispatch
     }
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newEvent = { ...formData, id: formData.id || Math.random().toString(36).substr(2, 9) } as EventRecord;
-    setEvents(prev => {
-      const exists = prev.find(ev => ev.id === newEvent.id);
-      return exists ? prev.map(ev => ev.id === newEvent.id ? newEvent : ev) : [...prev, newEvent];
-    });
-    setIsModalOpen(false);
+    setIsLoading(true);
+    try {
+      const session = localStorage.getItem('lexflow_session');
+      const user = session ? JSON.parse(session) : null;
+      
+      const res = await fetch('http://localhost:3001/api/agenda', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-user-id': user?.id || ''
+        },
+        body: JSON.stringify(formData)
+      });
+      if (res.ok) {
+        onAdd();
+        setIsModalOpen(false);
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -108,7 +113,7 @@ export const Agenda: React.FC<{ events: EventRecord[], setEvents: React.Dispatch
       <header className="flex justify-between items-center px-2">
         <div>
           <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Agenda Jurídica</h1>
-          <p className="text-slate-500 text-sm font-medium mt-1">Sincronizada com o fluxo de intimações.</p>
+          <p className="text-slate-500 text-sm font-medium mt-1">Gestão centralizada de prazos e eventos.</p>
         </div>
         <button onClick={() => setIsModalOpen(true)} className="dynamic-btn px-6 py-3 text-sm flex items-center gap-2">
           <i className="fas fa-plus text-[10px]"></i> Novo Agendamento
@@ -116,23 +121,20 @@ export const Agenda: React.FC<{ events: EventRecord[], setEvents: React.Dispatch
       </header>
       
       <div className="glass-card p-8">
-        {!(window as any).FullCalendar && (
-          <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-            <i className="fas fa-circle-notch fa-spin text-2xl mb-4"></i>
-            <p className="text-[10px] font-black uppercase tracking-widest">Carregando Calendário...</p>
-          </div>
-        )}
         <div ref={calendarRef}></div>
       </div>
 
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-sm">
-          <div className="soft-glass w-full max-w-md p-8">
-            <h2 className="text-lg font-black dark:text-white mb-6 uppercase tracking-widest">Compromisso</h2>
+          <div className="soft-glass w-full max-w-md p-8 bg-slate-900 border-white/10">
+            <h2 className="text-lg font-black text-white mb-6 uppercase tracking-widest">Compromisso</h2>
             <form onSubmit={handleSave} className="space-y-4">
-              <input required placeholder="Assunto" className="w-full p-4 bg-slate-50 dark:bg-white/5 rounded-xl outline-none text-sm dark:text-white" value={formData.title || ''} onChange={e => setFormData({...formData, title: e.target.value})} />
-              <input required type="date" className="w-full p-4 bg-slate-50 dark:bg-white/5 rounded-xl outline-none text-sm dark:text-white" value={formData.date || ''} onChange={e => setFormData({...formData, date: e.target.value})} />
-              <select className="w-full p-4 bg-slate-50 dark:bg-white/5 rounded-xl outline-none text-sm dark:text-white" value={formData.type || 'outro'} onChange={e => setFormData({...formData, type: e.target.value as any})}>
+              <input required placeholder="Assunto" className="w-full p-4 bg-white/5 border border-white/5 rounded-xl outline-none text-sm text-white" value={formData.title || ''} onChange={e => setFormData({...formData, title: e.target.value})} />
+              <div className="grid grid-cols-2 gap-4">
+                <input required type="date" className="w-full p-4 bg-white/5 border border-white/5 rounded-xl outline-none text-sm text-white" value={formData.date || ''} onChange={e => setFormData({...formData, date: e.target.value})} />
+                <input required type="time" className="w-full p-4 bg-white/5 border border-white/5 rounded-xl outline-none text-sm text-white" value={formData.time || '09:00'} onChange={e => setFormData({...formData, time: e.target.value})} />
+              </div>
+              <select className="w-full p-4 bg-white/5 border border-white/5 rounded-xl outline-none text-sm text-white" value={formData.type || 'outro'} onChange={e => setFormData({...formData, type: e.target.value as any})}>
                 <option value="audiencia">Audiência</option>
                 <option value="prazo">Prazo Fatal</option>
                 <option value="reuniao">Reunião</option>
@@ -140,7 +142,9 @@ export const Agenda: React.FC<{ events: EventRecord[], setEvents: React.Dispatch
               </select>
               <div className="flex justify-end gap-3 pt-4">
                 <button type="button" onClick={() => setIsModalOpen(false)} className="text-xs font-bold text-slate-400">Cancelar</button>
-                <button type="submit" className="dynamic-btn px-8 py-3 rounded-xl text-xs uppercase">Salvar</button>
+                <button type="submit" disabled={isLoading} className="dynamic-btn px-8 py-3 rounded-xl text-xs uppercase">
+                  {isLoading ? 'Salvando...' : 'Salvar'}
+                </button>
               </div>
             </form>
           </div>

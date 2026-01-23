@@ -1,22 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { authService, User } from '../services/authService';
+import React, { useState } from 'react';
 
-export const LawyerManager: React.FC = () => {
-  const [users, setUsers] = useState<User[]>([]);
+export const LawyerManager: React.FC<{ users: any[], onUpdate: () => void }> = ({ users, onUpdate }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState<any>({ role: 'LAWYER', password: '' });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-
-  useEffect(() => {
-    loadUsers();
-  }, []);
-
-  const loadUsers = async () => {
-    const data = await authService.getUsers();
-    setUsers(data);
-  };
 
   const getInitials = (name: string) => {
     const parts = name.split(' ');
@@ -40,29 +29,28 @@ export const LawyerManager: React.FC = () => {
     setError('');
 
     try {
-      await authService.createUser(formData);
-      loadUsers();
-      closeModal();
+      const session = localStorage.getItem('lexflow_session');
+      const curUser = session ? JSON.parse(session) : null;
+
+      const res = await fetch('http://localhost:3001/api/users', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-user-id': curUser?.id || ''
+        },
+        body: JSON.stringify(formData)
+      });
+      
+      if (!res.ok) throw new Error('Erro ao salvar usuário.');
+      
+      onUpdate();
+      setIsModalOpen(false);
+      setFormData({ role: 'LAWYER', password: '' });
     } catch (err: any) {
       setError(err.message || 'Erro ao processar solicitação.');
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const openModal = (user?: User) => {
-    if (user) {
-      setFormData({ ...user, password: '' });
-    } else {
-      setFormData({ role: 'LAWYER', password: '' });
-    }
-    setIsModalOpen(true);
-  };
-
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setFormData({});
-    setError('');
   };
 
   const filteredUsers = users.filter(u => 
@@ -75,7 +63,7 @@ export const LawyerManager: React.FC = () => {
       <header className="flex flex-col md:flex-row justify-between items-center gap-6 px-2">
         <div>
           <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Gestão de Equipe</h1>
-          <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mt-1">Conectado ao Banco MySQL Oficial.</p>
+          <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mt-1">Sincronizado com o núcleo LexFlow.</p>
         </div>
         
         <div className="flex items-center gap-4 w-full md:w-auto">
@@ -89,7 +77,7 @@ export const LawyerManager: React.FC = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <button onClick={() => openModal()} className="dynamic-btn px-6 py-2.5 text-xs flex items-center gap-2">
+          <button onClick={() => setIsModalOpen(true)} className="dynamic-btn px-6 py-2.5 text-xs flex items-center gap-2">
             <i className="fas fa-user-plus text-[10px]"></i> Novo Membro
           </button>
         </div>
@@ -133,7 +121,7 @@ export const LawyerManager: React.FC = () => {
           <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[32px] shadow-2xl border border-slate-800 overflow-hidden">
             <div className="px-8 py-6 border-b border-slate-800 flex justify-between items-center">
               <h2 className="text-base font-bold text-slate-900 dark:text-white uppercase tracking-widest">Novo Advogado</h2>
-              <button onClick={closeModal} className="text-slate-300 hover:text-white text-2xl">&times;</button>
+              <button onClick={() => setIsModalOpen(false)} className="text-slate-300 hover:text-white text-2xl">&times;</button>
             </div>
             
             <form onSubmit={handleSave} className="p-8 space-y-5">
@@ -166,9 +154,9 @@ export const LawyerManager: React.FC = () => {
               </div>
 
               <div className="flex justify-end gap-3 pt-6">
-                <button type="button" onClick={closeModal} className="text-xs font-bold text-slate-400 uppercase tracking-widest px-4 py-2 hover:text-slate-600">Cancelar</button>
+                <button type="button" onClick={() => setIsModalOpen(false)} className="text-xs font-bold text-slate-400 uppercase tracking-widest px-4 py-2 hover:text-slate-600">Cancelar</button>
                 <button type="submit" disabled={isLoading} className="dynamic-btn px-8 py-3.5 rounded-xl text-xs uppercase tracking-widest">
-                  {isLoading ? 'Salvando no MySQL...' : 'Salvar no Banco'}
+                  {isLoading ? 'Salvando...' : 'Salvar Membro'}
                 </button>
               </div>
             </form>

@@ -13,50 +13,66 @@ import { DocumentTemplates } from './components/DocumentTemplates';
 import { IntelligenceModule } from './components/IntelligenceModule';
 import { LegalLibrary } from './components/LegalLibrary';
 import { MembersArea } from './components/MembersArea';
-import { authService } from './services/authService';
+
+const API_URL = 'http://localhost:3001/api';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<'landing' | 'login' | 'members' | 'crm'>('landing');
   const [activeTab, setActiveTab] = useState<'dashboard' | 'clients' | 'agenda' | 'lawyers' | 'financial' | 'ai' | 'kanban' | 'planning' | 'documents' | 'intelligence' | 'library'>('dashboard');
-  const [user, setUser] = useState<any>(null);
+  const [auth, setAuth] = useState<any>(null);
+  
   const [clients, setClients] = useState<any[]>([]);
+  const [events, setEvents] = useState<any[]>([]);
+  const [financials, setFinancials] = useState<any[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
 
   useEffect(() => {
-    const savedUser = localStorage.getItem('lexflow_session');
-    if (savedUser) {
-      const u = JSON.parse(savedUser);
-      setUser(u);
+    const saved = localStorage.getItem('lexflow_session');
+    if (saved) {
+      const session = JSON.parse(saved);
+      setAuth(session);
       setCurrentView('crm');
     }
   }, []);
 
   useEffect(() => {
-    if (user) loadInitialData();
-  }, [user]);
+    if (auth) loadAllData();
+  }, [auth]);
 
-  const loadInitialData = async () => {
+  const getHeaders = () => ({
+    'Content-Type': 'application/json',
+    'x-user-id': auth?.user?.id || '',
+    'Authorization': `Bearer ${auth?.token || ''}`
+  });
+
+  const loadAllData = async () => {
     try {
-      const res = await fetch('http://localhost:3001/api/clients', {
-        headers: { 'x-user-id': user?.id || '' }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setClients(data);
-      }
+      const h = getHeaders();
+      const [cRes, eRes, fRes, uRes] = await Promise.all([
+        fetch(`${API_URL}/clients`, { headers: h }),
+        fetch(`${API_URL}/agenda`, { headers: h }),
+        fetch(`${API_URL}/financial`, { headers: h }),
+        fetch(`${API_URL}/users`, { headers: h })
+      ]);
+
+      if (cRes.ok) setClients(await cRes.json());
+      if (eRes.ok) setEvents(await eRes.json());
+      if (fRes.ok) setFinancials(await fRes.json());
+      if (uRes.ok) setUsers(await uRes.json());
     } catch (e) {
-      console.error("Erro ao carregar dados");
+      console.error("Erro na sincronização de dados.");
     }
   };
 
-  const handleLogin = (userData: any) => {
-    localStorage.setItem('lexflow_session', JSON.stringify(userData));
-    setUser(userData);
+  const handleLogin = (authResponse: any) => {
+    localStorage.setItem('lexflow_session', JSON.stringify(authResponse));
+    setAuth(authResponse);
     setCurrentView('crm');
   };
 
   const handleLogout = () => {
     localStorage.removeItem('lexflow_session');
-    setUser(null);
+    setAuth(null);
     setCurrentView('landing');
   };
 
@@ -74,13 +90,13 @@ const App: React.FC = () => {
     { id: 'ai', label: 'LexFlow AI', icon: 'fa-wand-magic-sparkles' },
   ];
 
-  const filteredMenuItems = menuItems.filter(item => !item.adminOnly || user?.role === 'ADMIN');
+  const filteredMenuItems = menuItems.filter(item => !item.adminOnly || auth?.user?.perfil === 'admin');
 
   if (currentView === 'landing') return <LandingPage onGoToLogin={() => setCurrentView('login')} onGoToMembers={() => setCurrentView('members')} />;
   if (currentView === 'login') return <Login onLogin={handleLogin} onBack={() => setCurrentView('landing')} />;
   if (currentView === 'members') return <MembersArea onBack={() => setCurrentView('landing')} onGoToCRM={() => setCurrentView('login')} />;
 
-  const isDemoMode = user?.email === 'demo@crm.com';
+  const isDemoMode = auth?.user?.email === 'demo@crm.com';
 
   return (
     <div className="flex h-screen w-full bg-slate-950 overflow-hidden font-sans text-white">
@@ -128,25 +144,25 @@ const App: React.FC = () => {
           </div>
           <div className="flex items-center gap-4">
             <div className="text-right hidden md:block">
-              <p className="text-xs font-black text-white">{user?.name}</p>
-              <p className="text-[9px] font-bold text-blue-500 uppercase tracking-widest">{isDemoMode ? 'TESTE TEMPORÁRIO' : `PERFIL: ${user?.role}`}</p>
+              <p className="text-xs font-black text-white">{auth?.user?.nome}</p>
+              <p className="text-[9px] font-bold text-blue-500 uppercase tracking-widest">{isDemoMode ? 'TESTE TEMPORÁRIO' : `PERFIL: ${auth?.user?.perfil}`}</p>
             </div>
-            <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'User')}&background=2563eb&color=fff`} className="w-10 h-10 rounded-xl border border-white/20" alt="Avatar" />
+            <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(auth?.user?.nome || 'User')}&background=2563eb&color=fff`} className="w-10 h-10 rounded-xl border border-white/20" alt="Avatar" />
           </div>
         </header>
 
         <main className="flex-1 overflow-y-auto p-10 custom-scrollbar bg-slate-950">
           <div className="max-w-7xl mx-auto pb-10">
             {activeTab === 'dashboard' && <Dashboard setActiveTab={setActiveTab} />}
-            {activeTab === 'intelligence' && <IntelligenceModule clients={clients} lawyers={[]} onDelegate={() => {}} />}
-            {activeTab === 'clients' && <ClientManager clients={clients} onAdd={loadInitialData} />}
-            {activeTab === 'financial' && <FinancialManager transactions={[]} onAdd={() => {}} />}
-            {activeTab === 'agenda' && <Agenda events={[]} setEvents={() => {}} />}
+            {activeTab === 'intelligence' && <IntelligenceModule clients={clients} lawyers={users} onDelegate={loadAllData} />}
+            {activeTab === 'clients' && <ClientManager clients={clients} onAdd={loadAllData} />}
+            {activeTab === 'financial' && <FinancialManager transactions={financials} onAdd={loadAllData} />}
+            {activeTab === 'agenda' && <Agenda events={events} onAdd={loadAllData} />}
             {activeTab === 'documents' && <DocumentTemplates />}
             {activeTab === 'library' && <LegalLibrary />}
             {activeTab === 'kanban' && <KanbanPipeline />}
             {activeTab === 'planning' && <StrategicPlanning />}
-            {activeTab === 'lawyers' && <LawyerManager />}
+            {activeTab === 'lawyers' && <LawyerManager users={users} onUpdate={loadAllData} />}
             {activeTab === 'ai' && <div className="max-w-3xl mx-auto"><AIAssistant /></div>}
           </div>
         </main>

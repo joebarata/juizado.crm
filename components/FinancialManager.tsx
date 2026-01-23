@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 
 interface Transaction {
@@ -10,22 +9,37 @@ interface Transaction {
   date: string;
 }
 
-export const FinancialManager: React.FC<{ transactions: Transaction[], onAdd: (t: Transaction) => void }> = ({ transactions, onAdd }) => {
+export const FinancialManager: React.FC<{ transactions: Transaction[], onAdd: () => void }> = ({ transactions, onAdd }) => {
   const [showModal, setShowModal] = useState(false);
-  const [newT, setNewT] = useState<Partial<Transaction>>({ type: 'receita', status: 'pendente' });
+  const [newT, setNewT] = useState<Partial<Transaction>>({ type: 'receita', status: 'pendente', date: new Date().toISOString().split('T')[0] });
+  const [isLoading, setIsLoading] = useState(false);
 
-  const totalRevenue = transactions.filter(t => t.type === 'receita').reduce((a, b) => a + b.val, 0);
-  const totalExpense = transactions.filter(t => t.type === 'despesa').reduce((a, b) => a + b.val, 0);
+  const totalRevenue = transactions.filter(t => t.type === 'receita').reduce((a, b) => a + Number(b.val), 0);
+  const totalExpense = transactions.filter(t => t.type === 'despesa').reduce((a, b) => a + Number(b.val), 0);
   const balance = totalRevenue - totalExpense;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onAdd({
-      ...newT,
-      id: Math.random().toString(36).substr(2, 9),
-      date: new Date().toISOString().split('T')[0]
-    } as Transaction);
-    setShowModal(false);
+    setIsLoading(true);
+    try {
+      const session = localStorage.getItem('lexflow_session');
+      const user = session ? JSON.parse(session) : null;
+      
+      const res = await fetch('http://localhost:3001/api/financial', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-user-id': user?.id || ''
+        },
+        body: JSON.stringify(newT)
+      });
+      if (res.ok) {
+        onAdd();
+        setShowModal(false);
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -33,7 +47,7 @@ export const FinancialManager: React.FC<{ transactions: Transaction[], onAdd: (t
       <header className="flex justify-between items-center">
         <div>
           <h1 className="text-4xl font-extrabold tracking-tighter dark:text-white">Financeiro 360</h1>
-          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Controle de caixa real-time e saúde da banca.</p>
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Fluxo de caixa sincronizado em tempo real.</p>
         </div>
         <button onClick={() => setShowModal(true)} className="dynamic-btn px-8 py-3.5 rounded-xl text-xs uppercase tracking-widest">
           <i className="fas fa-plus mr-2"></i> Lançamento
@@ -72,7 +86,7 @@ export const FinancialManager: React.FC<{ transactions: Transaction[], onAdd: (t
                   <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">{t.date}</p>
                 </td>
                 <td className={`px-8 py-6 text-right font-extrabold text-base ${t.type === 'receita' ? 'text-emerald-500' : 'text-rose-500'}`}>
-                  {t.type === 'receita' ? '+' : '-'} R$ {t.val.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  {t.type === 'receita' ? '+' : '-'} R$ {Number(t.val).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </td>
                 <td className="px-8 py-6 text-center">
                   <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${t.status === 'pago' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-500 border border-amber-500/20'}`}>
@@ -87,24 +101,29 @@ export const FinancialManager: React.FC<{ transactions: Transaction[], onAdd: (t
 
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-md">
-          <div className="soft-glass w-full max-w-lg p-10">
-            <h2 className="text-xl font-black dark:text-white mb-6 uppercase tracking-tighter">Novo Lançamento</h2>
+          <div className="soft-glass w-full max-w-lg p-10 bg-slate-900 border-white/10">
+            <h2 className="text-xl font-black text-white mb-6 uppercase tracking-tighter">Novo Lançamento</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <input required placeholder="Descrição do Lançamento" className="w-full p-4 bg-slate-50 dark:bg-white/5 rounded-xl outline-none text-sm dark:text-white" onChange={e => setNewT({...newT, desc: e.target.value})} />
+              <input required placeholder="Descrição do Lançamento" className="w-full p-4 bg-white/5 rounded-xl outline-none text-sm text-white border border-white/5" onChange={e => setNewT({...newT, desc: e.target.value})} />
               <div className="grid grid-cols-2 gap-4">
-                <input required type="number" step="0.01" placeholder="Valor R$" className="w-full p-4 bg-slate-50 dark:bg-white/5 rounded-xl outline-none text-sm dark:text-white" onChange={e => setNewT({...newT, val: parseFloat(e.target.value)})} />
-                <select className="w-full p-4 bg-slate-50 dark:bg-white/5 rounded-xl outline-none text-sm dark:text-white" onChange={e => setNewT({...newT, type: e.target.value as any})}>
+                <input required type="number" step="0.01" placeholder="Valor R$" className="w-full p-4 bg-white/5 rounded-xl outline-none text-sm text-white border border-white/5" onChange={e => setNewT({...newT, val: parseFloat(e.target.value)})} />
+                <select className="w-full p-4 bg-white/5 rounded-xl outline-none text-sm text-white border border-white/5" onChange={e => setNewT({...newT, type: e.target.value as any})}>
                   <option value="receita">Receita (+)</option>
                   <option value="despesa">Despesa (-)</option>
                 </select>
               </div>
-              <select className="w-full p-4 bg-slate-50 dark:bg-white/5 rounded-xl outline-none text-sm dark:text-white" onChange={e => setNewT({...newT, status: e.target.value as any})}>
-                <option value="pago">Pago / Recebido</option>
-                <option value="pendente">Pendente</option>
-              </select>
+              <div className="grid grid-cols-2 gap-4">
+                <input required type="date" className="w-full p-4 bg-white/5 rounded-xl outline-none text-sm text-white border border-white/5" value={newT.date} onChange={e => setNewT({...newT, date: e.target.value})} />
+                <select className="w-full p-4 bg-white/5 rounded-xl outline-none text-sm text-white border border-white/5" onChange={e => setNewT({...newT, status: e.target.value as any})}>
+                  <option value="pago">Pago / Recebido</option>
+                  <option value="pendente">Pendente</option>
+                </select>
+              </div>
               <div className="flex justify-end gap-3 pt-6">
                 <button type="button" onClick={() => setShowModal(false)} className="text-xs font-black uppercase text-slate-500">Cancelar</button>
-                <button type="submit" className="dynamic-btn px-10 py-3 rounded-xl text-xs uppercase tracking-widest">Confirmar</button>
+                <button type="submit" disabled={isLoading} className="dynamic-btn px-10 py-3 rounded-xl text-xs uppercase tracking-widest">
+                  {isLoading ? 'Confirmando...' : 'Confirmar'}
+                </button>
               </div>
             </form>
           </div>
