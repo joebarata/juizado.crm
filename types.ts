@@ -6,6 +6,41 @@ export enum UserRole {
   INTERN = 'INTERN'
 }
 
+export enum CaseType {
+  TRABALHISTA = 'TRABALHISTA',
+  CIVIL = 'CIVIL',
+  FAMILIA = 'FAMILIA',
+  EMPRESARIAL = 'EMPRESARIAL',
+  PENAL = 'PENAL',
+  TRIBUTARIO = 'TRIBUTARIO',
+  OUTROS = 'OUTROS'
+}
+
+export enum UrgencyLevel {
+  BAIXA = 'BAIXA',
+  MEDIA = 'MEDIA',
+  ALTA = 'ALTA',
+  CRITICA = 'CRITICA'
+}
+
+export interface LegalLead {
+  id: string;
+  org_id: number;
+  name: string;
+  phone: string;
+  email: string;
+  case_type: CaseType;
+  potential_value: number;
+  probability: number; // 0-100
+  urgency: UrgencyLevel;
+  column_id: string;
+  description: string;
+  deadline?: string;
+  fee_type: 'FIXO' | 'PERCENTUAL' | 'SUCESSIVO' | 'MISTO';
+  fee_value: number;
+  created_at: string;
+}
+
 export interface Client {
   id: string;
   name: string;
@@ -26,25 +61,7 @@ export interface LegalProcess {
   cnj: string;
   clientId: string;
   tribunal: string;
-  court: string; // Vara
+  court: string;
   status: string;
   lastUpdate: string;
-}
-
-export interface Intimation {
-  id: string;
-  processId: string;
-  description: string;
-  dateReceived: string;
-  deadline: string;
-  isRead: boolean;
-}
-
-export interface FinancialTransaction {
-  id: string;
-  description: string;
-  amount: number;
-  type: 'CREDIT' | 'DEBIT';
-  category: string;
-  date: string;
 }
